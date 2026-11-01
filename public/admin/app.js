@@ -110,10 +110,14 @@ function renderLeads() {
     
     let hotCount = 0;
     let broadcastCount = 0;
+    let totalInboxUnread = 0;
     
     allLeadsCache.forEach(lead => {
         if (lead.lead_status === 'HOT') hotCount++;
         if (lead.lead_status === 'BROADCAST') broadcastCount++;
+        if (lead.lead_status !== 'BROADCAST') {
+            totalInboxUnread += Number(lead.unread_count || 0);
+        }
     });
     
     let leadsToRender = allLeadsCache;
@@ -127,23 +131,47 @@ function renderLeads() {
     leadsToRender.forEach(lead => {
         const card = document.createElement('div');
         const isActive = (currentLeadId === lead.id);
-        card.className = `lead-card ${isActive ? 'active' : ''}`;
+        const unreadCount = Number(lead.unread_count || 0);
+        
+        card.className = `lead-card ${isActive ? 'active' : ''} ${unreadCount > 0 ? 'unread-lead' : ''}`;
         if (isActive) {
             card.style.borderLeft = '4px solid #3b82f6';
             card.style.background = 'var(--bg-secondary, #f1f5f9)';
+        } else if (unreadCount > 0) {
+            card.style.borderLeft = '4px solid #25d366';
         }
         card.onclick = () => loadLeadDetail(lead);
         
-        const timeStr = new Date(lead.updated_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const timeStr = new Date(lead.updated_at || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        // Unread badge pill
+        const unreadBadgeHtml = unreadCount > 0
+            ? `<span style="background: #25d366; color: white; font-size: 0.7rem; font-weight: bold; border-radius: 12px; padding: 2px 7px; min-width: 18px; text-align: center; box-shadow: 0 1px 3px rgba(37,211,102,0.4);">${unreadCount}</span>`
+            : '';
+
+        // Last message preview snippet if available
+        const lastMsgPreview = lead.last_message
+            ? `<div style="font-size: 0.75rem; color: ${unreadCount > 0 ? 'var(--text-primary)' : 'var(--text-secondary, #6b7280)'}; font-weight: ${unreadCount > 0 ? '600' : 'normal'}; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;">
+                ${lead.last_message_sender === 'customer' ? '💬 ' : '🤖 '}${lead.last_message}
+               </div>`
+            : '';
         
         card.innerHTML = `
-            <div class="lead-header">
-                <span class="lead-name">${lead.customer_name || 'Unknown User'}</span>
-                <span class="status-badge ${lead.lead_status}">${lead.lead_status}</span>
+            <div class="lead-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="lead-name" style="font-weight: ${unreadCount > 0 ? '700' : '600'}; display: flex; align-items: center; gap: 6px;">
+                    ${lead.customer_name || 'Unknown User'}
+                    ${unreadCount > 0 ? '<span style="width: 8px; height: 8px; background: #25d366; border-radius: 50%; display: inline-block;"></span>' : ''}
+                </span>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    ${unreadBadgeHtml}
+                    <span class="status-badge ${lead.lead_status}">${lead.lead_status}</span>
+                </div>
             </div>
-            <div class="lead-meta">
-                ${lead.phone_number} • ${timeStr}
+            <div class="lead-meta" style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
+                <span>${lead.phone_number}</span>
+                <span>${timeStr}</span>
             </div>
+            ${lastMsgPreview}
         `;
         listEl.appendChild(card);
     });
@@ -151,12 +179,26 @@ function renderLeads() {
     document.getElementById('total-count').innerText = allLeadsCache.length;
     document.getElementById('hot-count').innerText = hotCount;
     
+    // Update Inbox Unread Badge
+    const inboxBadge = document.getElementById('unread-inbox-badge');
+    if (inboxBadge) {
+        if (totalInboxUnread > 0) {
+            inboxBadge.style.display = 'block';
+            inboxBadge.innerText = totalInboxUnread > 99 ? '99+' : totalInboxUnread;
+        } else {
+            inboxBadge.style.display = 'none';
+        }
+    }
+    
+    // Update Broadcasts Badge
     const badge = document.getElementById('unread-broadcasts-badge');
-    if (broadcastCount > 0) {
-        badge.style.display = 'block';
-        badge.innerText = broadcastCount;
-    } else {
-        badge.style.display = 'none';
+    if (badge) {
+        if (broadcastCount > 0) {
+            badge.style.display = 'block';
+            badge.innerText = broadcastCount;
+        } else {
+            badge.style.display = 'none';
+        }
     }
 }
 
@@ -256,7 +298,14 @@ function renderConversationMessages(messages) {
 async function loadLeadDetail(lead) {
     currentLeadId = lead.id;
     lastKnownMessagesCount = 0;
-    renderLeads(); // update active card highlight
+    
+    // Clear unread count locally and inform server
+    if (lead.unread_count > 0) {
+        lead.unread_count = 0;
+        fetch(`/api/admin/leads/${lead.id}/read`, { method: 'POST' }).catch(() => {});
+    }
+    
+    renderLeads(); // update active card highlight and badge counts
     switchMainPanel('detail');
     
     // Populate header details

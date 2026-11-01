@@ -350,6 +350,18 @@ app.get('/api/admin/leads/:id/conversations', async (req, res) => {
   }
 });
 
+app.post('/api/admin/leads/:id/read', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.collection('leads').doc(id).update({
+      unread_count: 0
+    });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.delete('/api/admin/leads/:id/conversations', async (req, res) => {
   try {
     const { id } = req.params;

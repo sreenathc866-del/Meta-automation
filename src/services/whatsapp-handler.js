@@ -314,13 +314,24 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
         console.error('[WhatsApp] Failed to save customer message:', insertErr);
       }
 
-      // If they were a broadcast recipient and they replied, move them to the Inbox
-      if (lead.lead_status === 'BROADCAST') {
-        await db.collection('leads').doc(lead.id).update({
-          lead_status: 'UNQUALIFIED',
+      // Update lead with unread counter, last message preview, and latest timestamp
+      try {
+        const leadDocRef = db.collection('leads').doc(lead.id);
+        const currentUnread = Number(lead.unread_count || 0);
+        const leadUpdates = {
+          unread_count: currentUnread + 1,
+          last_message: incomingMessage.startsWith('[Voice Message]') ? '🎤 Voice Note' : (incomingMessage.length > 50 ? incomingMessage.substring(0, 50) + '...' : incomingMessage),
+          last_message_sender: 'customer',
           updated_at: new Date().toISOString()
-        });
-        lead.lead_status = 'UNQUALIFIED'; // Update local object
+        };
+        if (lead.lead_status === 'BROADCAST') {
+          leadUpdates.lead_status = 'UNQUALIFIED';
+          lead.lead_status = 'UNQUALIFIED';
+        }
+        await leadDocRef.update(leadUpdates);
+        lead.unread_count = currentUnread + 1;
+      } catch (leadUpErr) {
+        console.error('[WhatsApp] Failed to update lead unread status:', leadUpErr);
       }
 
       // Fetch history (get latest 10 messages) without requiring a composite index in Firestore
