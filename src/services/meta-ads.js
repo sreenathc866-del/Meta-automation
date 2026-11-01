@@ -135,7 +135,8 @@ async function createCampaign(adAccountId, { name, objective, status = 'PAUSED',
     name: name,
     objective: objective, // e.g. OUTCOME_LEADS, OUTCOME_TRAFFIC, OUTCOME_SALES
     status: status, // Defaults to PAUSED until verified & published
-    special_ad_categories: ['NONE']
+    special_ad_categories: ['NONE'],
+    is_adset_budget_sharing_enabled: false
   };
 
   const response = await axios.post(`${GRAPH_BASE_URL}/${cleanAccountId}/campaigns`, payload, {

@@ -821,6 +821,12 @@ async function fetchConnectedAccounts() {
                 const acc = connectedAdAccounts[0];
                 document.getElementById('connected-ad-account').innerText = `${acc.name} (${acc.account_id})`;
 
+                // Dynamically update Top Up link to direct ad account billing hub
+                const topUpBtn = document.getElementById('top-up-billing-btn');
+                if (topUpBtn && acc.account_id) {
+                    topUpBtn.href = `https://adsmanager.facebook.com/billing_hub?act=${acc.account_id}`;
+                }
+
                 // Render Available Balance & Total Spend from Meta Account
                 const balanceEl = document.getElementById('metric-account-balance');
                 if (balanceEl) {

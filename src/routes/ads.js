@@ -322,8 +322,10 @@ router.post('/campaigns/:id/publish', async (req, res) => {
       metaAdId: metaAd.id
     });
   } catch (err) {
-    console.error('Meta Publish Error:', err.response?.data || err.message);
-    res.status(500).json({ error: err.response?.data?.error?.message || err.message });
+    const metaErr = err.response?.data?.error;
+    const errorDetails = metaErr?.error_user_msg || metaErr?.message || err.message;
+    console.error('Meta Publish Error:', metaErr || err.message);
+    res.status(500).json({ error: errorDetails });
   }
 });
 
