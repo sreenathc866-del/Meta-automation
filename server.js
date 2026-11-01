@@ -339,10 +339,10 @@ app.get('/api/admin/leads/:id/conversations', async (req, res) => {
     const { id } = req.params;
     const snapshot = await db.collection('conversations')
       .where('lead_id', '==', id)
-      .orderBy('timestamp', 'asc')
       .get();
       
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    data.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
     res.json(data);
   } catch (error) {
     console.warn('[Admin] Could not read conversations from Firestore:', error.message);

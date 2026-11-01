@@ -323,16 +323,22 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
         lead.lead_status = 'UNQUALIFIED'; // Update local object
       }
 
-      // Fetch history (get latest 10 messages)
-      const historySnap = await db.collection('conversations')
-        .where('lead_id', '==', lead.id)
-        .orderBy('timestamp', 'desc')
-        .limit(10)
-        .get();
+      // Fetch history (get latest 10 messages) without requiring a composite index in Firestore
+      let chronologicalHistory = [];
+      try {
+        const historySnap = await db.collection('conversations')
+          .where('lead_id', '==', lead.id)
+          .get();
+        if (!historySnap.empty) {
+          const allMsgs = historySnap.docs.map(doc => doc.data());
+          allMsgs.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+          chronologicalHistory = allMsgs.slice(-10);
+        }
+      } catch (convErr) {
+        console.warn('[WhatsApp] Failed to fetch conversation history:', convErr.message);
+      }
 
-      if (!historySnap.empty) {
-        const history = historySnap.docs.map(doc => doc.data());
-        const chronologicalHistory = history.reverse();
+      if (chronologicalHistory.length > 0) {
         
         // Anti-spam / deduplication: if the user sends the exact same message back-to-back within 5 minutes, ignore it.
         const userMessagesOnly = chronologicalHistory.filter(r => r.sender === 'customer');
