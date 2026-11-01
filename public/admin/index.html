@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OQULIX - Lead Management Dashboard</title>
-    <link rel="stylesheet" href="style.css?v=15">
+    <link rel="stylesheet" href="style.css?v=16">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Leaflet CSS & JS for Interactive Audience Radius Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -82,25 +82,33 @@
                 </div>
             </div>
 
-            <div class="action-footer" style="padding: 10px 20px;">
-                <div class="action-controls">
+            <div class="action-footer">
+                <div class="action-top-bar">
                     <button id="ai-toggle-btn" class="primary-btn ai-toggle-btn" onclick="toggleAi()">⏸ Pause AI (10m)</button>
-                    
+                    <span id="ai-status-hint" style="font-size: 0.75rem; color: var(--text-secondary); opacity: 0.8;">Bot will auto-reply</span>
+                </div>
+                <div class="action-controls">
                     <!-- Media upload support -->
                     <input type="file" id="media-upload-input" style="display: none;" onchange="handleMediaUpload(event)" accept="image/*,video/*,audio/*">
                     <button class="media-btn" onclick="document.getElementById('media-upload-input').click()" title="Attach Media">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
                         </svg>
                     </button>
 
-                    <input type="text" id="admin-reply-input" class="admin-input" placeholder="Type a message to send..." style="border: none; border-radius: 8px;">
+                    <input type="text" id="admin-reply-input" class="admin-input" placeholder="Type a message..." autocomplete="off">
+                    
                     <button class="voice-btn" id="voice-record-btn" onmousedown="startRecording()" onmouseup="stopRecording()" onmouseleave="stopRecording()" ontouchstart="startRecording()" ontouchend="stopRecording()" title="Hold to Record Audio">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
                         </svg>
                     </button>
-                    <button class="primary-btn send-msg-btn" onclick="sendAdminReply()">Send</button>
+                    
+                    <button class="primary-btn send-msg-btn" onclick="sendAdminReply()" title="Send">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 18px; height: 18px;">
+                            <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z" />
+                        </svg>
+                    </button>
                 </div>
             </div>
         </section>
@@ -202,41 +210,42 @@
 
         <!-- Meta Ads Dashboard Panel -->
         <section class="detail-panel" id="ads-panel" style="display: none; padding: 1.5rem; background: var(--bg-primary); flex-direction: column; overflow-y: auto; height: 100%;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.25rem 1.5rem;">
-                <div>
-                    <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">🎯 Meta Ads Manager (Facebook & Instagram)</h2>
-                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Create, optimize with AI, preview, manually approve, and track Click-to-WhatsApp and Lead campaigns.</p>
+            <!-- Ads Panel Header -->
+            <div class="ads-header-card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.25rem 1.5rem; gap: 1rem;">
+                <div style="flex: 1; min-width: 0;">
+                    <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; word-break: break-word;">🎯 Meta Ads Manager</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0;">Facebook & Instagram campaigns, Click-to-WhatsApp, and instant lead tracking.</p>
                 </div>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <button onclick="openNewCampaignModal()" class="primary-btn" style="background: #2563eb; font-weight: 600; padding: 9px 18px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">✨ Create New Campaign</button>
-                    <button onclick="fetchAdCampaigns()" class="refresh-btn" style="padding: 9px 14px; border: 1px solid var(--border-card); background: var(--bg-surface); border-radius: 6px; font-weight: 600;">🔄 Refresh</button>
-                    <button onclick="hideAdsPanel()" style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 1.4rem; padding: 4px 8px;">✖</button>
+                <div class="ads-header-actions" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <button onclick="openNewCampaignModal()" class="primary-btn" style="background: #2563eb; font-weight: 600; padding: 8px 14px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); width: auto; font-size: 0.85rem; white-space: nowrap;">✨ Create Campaign</button>
+                    <button onclick="fetchAdCampaigns()" class="refresh-btn" style="padding: 8px 12px; border: 1px solid var(--border-card); background: var(--bg-surface); border-radius: 6px; font-weight: 600; font-size: 0.85rem; white-space: nowrap;">🔄 Refresh</button>
+                    <button onclick="hideAdsPanel()" style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 1.3rem; padding: 4px 6px;">✖</button>
                 </div>
             </div>
 
             <!-- Connected Accounts Summary -->
-            <div id="ads-accounts-bar" style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                <div style="display: flex; gap: 2rem; align-items: center;">
-                    <div style="padding-right: 2rem; border-right: 1px solid var(--border-color);">
+            <div id="ads-accounts-bar" class="ads-accounts-bar" style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div class="ads-accounts-info" style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
+                    <div class="account-item">
                         <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.5px;">Ad Account</span>
                         <div id="connected-ad-account" style="font-weight: 700; font-size: 0.95rem; margin-top: 3px; color: var(--text-primary);">Loading Ad Accounts...</div>
                     </div>
-                    <div style="padding-right: 2rem; border-right: 1px solid var(--border-color);">
+                    <div class="account-item">
                         <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.5px;">Facebook Page</span>
                         <div id="connected-page" style="font-weight: 700; font-size: 0.95rem; margin-top: 3px; color: var(--text-primary);">Loading Pages...</div>
                     </div>
-                    <div>
+                    <div class="account-item">
                         <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.5px;">Instagram Account</span>
                         <div id="connected-instagram" style="font-weight: 700; font-size: 0.95rem; margin-top: 3px; color: var(--text-primary);">-</div>
                     </div>
                 </div>
                 <div>
-                    <span id="whatsapp-status-badge" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">WhatsApp: Not Configured in .env</span>
+                    <span id="whatsapp-status-badge" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">WhatsApp: Active</span>
                 </div>
             </div>
 
-            <!-- Performance Overview Cards (5 Clean Stats Across 1 Row) -->
-            <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <!-- Performance Overview Cards (5 Clean Stats) -->
+            <div class="ads-metrics-grid" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
                 <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.1rem 1rem; border-left: 4px solid #3b82f6;">
                     <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Active Campaigns</div>
                     <div id="metric-active-campaigns" style="font-size: 1.6rem; font-weight: 800; margin-top: 6px; color: var(--text-primary);">0</div>
