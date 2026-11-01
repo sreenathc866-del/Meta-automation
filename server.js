@@ -142,7 +142,7 @@ const { getLeadDetails } = require('./src/services/meta-ads');
 app.use('/api/ads', adsRouter);
 
 // 1. Webhook Verification (Meta WhatsApp & Leads requirement)
-app.get('/api/whatsapp/webhook', (req, res) => {
+function verifyWebhook(req, res) {
   const verify_token = process.env.WHATSAPP_VERIFY_TOKEN || process.env.META_WEBHOOK_VERIFY_TOKEN || 'oqulix_secure_token';
 
   let mode = req.query["hub.mode"];
@@ -154,12 +154,16 @@ app.get('/api/whatsapp/webhook', (req, res) => {
       console.log("[Meta Webhook] Webhook verified!");
       res.status(200).send(challenge);
     } else {
+      console.warn(`[Meta Webhook] Token mismatch. Expected: ${verify_token}, Got: ${token}`);
       res.sendStatus(403);
     }
   } else {
     res.status(400).send("Invalid verification request");
   }
-});
+}
+
+app.get('/webhook', verifyWebhook);
+app.get('/api/whatsapp/webhook', verifyWebhook);
 
 // Also alias /api/meta/webhook for Facebook Page / Leadgen subscriptions
 app.get('/api/meta/webhook', (req, res) => {
@@ -297,6 +301,7 @@ async function handleMetaWebhook(req, res) {
   }
 }
 
+app.post('/webhook', handleMetaWebhook);
 app.post('/api/whatsapp/webhook', handleMetaWebhook);
 app.post('/api/meta/webhook', handleMetaWebhook);
 
