@@ -160,36 +160,50 @@ async function downloadWhatsAppMedia(mediaId) {
       headers: { 'Authorization': `Bearer ${WHATSAPP_TOKEN}` }
     });
     const mediaUrl = res.data.url;
-    const mimeType = res.data.mime_type;
+    let mimeType = res.data.mime_type || 'audio/ogg';
+    // Clean mimeType for AI model (strip codecs parameter if present, e.g. "audio/ogg; codecs=opus" -> "audio/ogg")
+    const cleanMimeType = mimeType.split(';')[0].trim();
     
     const mediaRes = await axios.get(mediaUrl, {
       responseType: 'arraybuffer',
       headers: { 'Authorization': `Bearer ${WHATSAPP_TOKEN}` }
     });
     
-    const ext = mimeType.split('/')[1] || 'ogg';
-    const filename = `whatsapp_media/${Date.now()}-${mediaId}.${ext.split(';')[0]}`;
-    const fileUpload = bucket.file(filename);
+    const audioBuffer = Buffer.from(mediaRes.data);
+    const base64Audio = audioBuffer.toString('base64');
 
-    await fileUpload.save(Buffer.from(mediaRes.data), {
-      contentType: mimeType,
-      public: true,
-      metadata: {
-        firebaseStorageDownloadTokens: Date.now()
-      }
-    });
-
-    let publicUrl;
+    // Attempt Firebase Storage upload in background or try/catch so storage failure never breaks AI understanding
+    let publicUrl = null;
     try {
-      await fileUpload.makePublic();
-      publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
-    } catch (e) {
-      publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filename)}?alt=media`;
+      const ext = cleanMimeType.split('/')[1] || 'ogg';
+      const filename = `whatsapp_media/${Date.now()}-${mediaId}.${ext}`;
+      const fileUpload = bucket.file(filename);
+
+      await fileUpload.save(audioBuffer, {
+        contentType: cleanMimeType,
+        public: true,
+        metadata: {
+          firebaseStorageDownloadTokens: Date.now()
+        }
+      });
+
+      try {
+        await fileUpload.makePublic();
+        publicUrl = `https://storage.googleapis.com/${bucket.name}/${filename}`;
+      } catch (e) {
+        publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(filename)}?alt=media`;
+      }
+    } catch (storageErr) {
+      console.warn("[WhatsApp] Firebase storage upload skipped or failed (audio buffer preserved for AI):", storageErr.message);
     }
     
-    return { publicUrl, mimeType, base64: Buffer.from(mediaRes.data).toString('base64') };
+    return { 
+      publicUrl: publicUrl || "", 
+      mimeType: cleanMimeType, 
+      base64: base64Audio 
+    };
   } catch (error) {
-    console.error("[WhatsApp] Failed to download media:", error.message);
+    console.error("[WhatsApp] Failed to download media from Meta:", error.message);
     return null;
   }
 }

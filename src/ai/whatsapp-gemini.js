@@ -59,7 +59,9 @@ CONVERSATION RULES:
     }
     let finalParts = [];
     if (audioData) {
-      finalParts.push({ text: "User sent a voice message. Please listen to this audio and reply to them." });
+      finalParts.push({ 
+        text: "User sent a WhatsApp voice message. Listen closely to what the user says in the audio (which may be in Malayalam, Manglish, or English). Reply naturally to what they asked or said in the same language they spoke." 
+      });
       finalParts.push({
         inlineData: {
           mimeType: audioData.mimeType,
