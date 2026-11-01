@@ -27,7 +27,7 @@ async function getAdAccounts() {
   try {
     const response = await axios.get(`${GRAPH_BASE_URL}/me/adaccounts`, {
       params: {
-        fields: 'id,account_id,name,account_status,currency,timezone_name,amount_spent,balance,min_daily_budget',
+        fields: 'id,account_id,name,account_status,currency,timezone_name,amount_spent,balance,min_daily_budget,business{id,name}',
         access_token: token
       }
     });
@@ -45,7 +45,7 @@ async function getAdAccounts() {
     try {
       const directRes = await axios.get(`${GRAPH_BASE_URL}/${actId}`, {
         params: {
-          fields: 'id,account_id,name,account_status,currency,timezone_name,amount_spent,balance,min_daily_budget',
+          fields: 'id,account_id,name,account_status,currency,timezone_name,amount_spent,balance,min_daily_budget,business{id,name}',
           access_token: token
         }
       });
