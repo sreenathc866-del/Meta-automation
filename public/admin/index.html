@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OQULIX - Lead Management Dashboard</title>
+    <link rel="stylesheet" href="style.css?v=15">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS & JS for Interactive Audience Radius Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">OQULIX<span>AI</span> CRM & Ads</div>
+        <div class="stats" style="display: flex; align-items: center; gap: 10px;">
+            <button id="nav-ads-btn" onclick="toggleAdsPanel()" style="background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">🎯 Meta Ads</button>
+            <button id="nav-bulk-btn" onclick="toggleBulkPanel()" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; gap: 5px;">📣 Bulk Send</button>
+            <button id="theme-toggle-btn" onclick="toggleDarkMode()" style="background: transparent; border: none; color: #a1a1aa; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; transition: color 0.2s;" title="Toggle Dark Mode">
+                <svg xmlns="http://www.w3.org/2000/svg" id="theme-icon" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 22px; height: 22px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                </svg>
+            </button>
+            <span class="stat-badge hot-badge">🔥 <span id="hot-count">0</span> HOT</span>
+            <span class="stat-badge">Total: <span id="total-count">0</span></span>
+        </div>
+    </header>
+
+    <main class="dashboard">
+        <!-- Leads List Panel -->
+        <section class="leads-panel">
+            <div class="panel-header">
+                <h2>Recent Leads</h2>
+                <div style="display: flex; gap: 10px;">
+                    <button id="filter-inbox-btn" onclick="setFilter('INBOX')" class="refresh-btn" style="background-color: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 8px;">📥 Inbox</button>
+                    <button id="filter-broadcasts-btn" onclick="setFilter('BROADCASTS')" class="refresh-btn" style="position: relative; background-color: transparent; color: var(--text-secondary); border: 1px solid transparent; border-radius: 4px; padding: 4px 8px;">
+                        📢 Broadcasts
+                        <span id="unread-broadcasts-badge" style="display: none; position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 0.65rem; padding: 2px 5px; border-radius: 10px; font-weight: bold;">0</span>
+                    </button>
+                    <button onclick="fetchLeads()" class="refresh-btn">🔄</button>
+                </div>
+            </div>
+            <div class="leads-list" id="leads-list">
+                <!-- Lead cards will be injected here -->
+                <div class="loading">Loading leads...</div>
+            </div>
+        </section>
+
+        <!-- Lead Detail Panel -->
+        <section class="detail-panel" id="detail-panel" style="display: none;">
+            <div class="detail-header">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <button class="desktop-back-btn" onclick="goBack()" title="Back to list">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 20px; height: 20px;">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                        </svg>
+                    </button>
+                    <div>
+                        <h2 id="detail-name" style="margin: 0; font-size: 1.1rem; font-weight: 600;">Customer Name</h2>
+                        <p id="detail-phone" style="margin: 0; font-size: 0.85rem; color: #6b7280;">+91 0000000000</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div class="badges" id="detail-badges">
+                        <span class="status-badge HOT">HOT</span>
+                    </div>
+                    <!-- Three dots menu icon -->
+                    <button class="icon-btn" onclick="toggleContactInfo()" title="Contact Info">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 24px; height: 24px; color: #4b5563;">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="conversation-section" style="flex: 1; border: none; margin: 0; border-radius: 0; display: flex; flex-direction: column;">
+                <div class="chat-window" id="chat-window" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Chat bubbles injected here -->
+                </div>
+            </div>
+
+            <div class="action-footer" style="padding: 10px 20px;">
+                <div class="action-controls">
+                    <button id="ai-toggle-btn" class="primary-btn ai-toggle-btn" onclick="toggleAi()">⏸ Pause AI (10m)</button>
+                    
+                    <!-- Media upload support -->
+                    <input type="file" id="media-upload-input" style="display: none;" onchange="handleMediaUpload(event)" accept="image/*,video/*,audio/*">
+                    <button class="media-btn" onclick="document.getElementById('media-upload-input').click()" title="Attach Media">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+                        </svg>
+                    </button>
+
+                    <input type="text" id="admin-reply-input" class="admin-input" placeholder="Type a message to send..." style="border: none; border-radius: 8px;">
+                    <button class="voice-btn" id="voice-record-btn" onmousedown="startRecording()" onmouseup="stopRecording()" onmouseleave="stopRecording()" ontouchstart="startRecording()" ontouchend="stopRecording()" title="Hold to Record Audio">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+                        </svg>
+                    </button>
+                    <button class="primary-btn send-msg-btn" onclick="sendAdminReply()">Send</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Info Drawer -->
+        <section class="contact-info-panel" id="contact-info-panel" style="display: none; width: 350px; flex-direction: column; overflow-y: auto;">
+            <div class="contact-info-header" style="padding: 20px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 15px;">
+                <button onclick="toggleContactInfo()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #4b5563;">&times;</button>
+                <h3 style="margin: 0; font-size: 1.1rem;">Contact Info</h3>
+            </div>
+            
+            <div style="padding: 20px;">
+                <div style="margin-bottom: 20px; text-align: center;">
+                    <div style="width: 100px; height: 100px; background: #e5e7eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: #9ca3af; margin: 0 auto 10px;">👤</div>
+                    <h2 id="drawer-name" style="margin: 0; font-size: 1.3rem;">Name</h2>
+                    <p id="drawer-phone" style="margin: 5px 0 0; color: #6b7280;">Phone</p>
+                </div>
+
+                <div class="info-card" style="margin-bottom: 10px;">
+                    <h3 style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Service</h3>
+                    <p id="drawer-service" style="font-weight: 600;">-</p>
+                </div>
+                <div class="info-card" style="margin-bottom: 10px;">
+                    <h3 style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Timeline</h3>
+                    <p id="drawer-timeline" style="font-weight: 600;">-</p>
+                </div>
+                <div class="info-card" style="margin-bottom: 10px;">
+                    <h3 style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Budget</h3>
+                    <p id="drawer-budget" style="font-weight: 600;">-</p>
+                </div>
+                <div class="info-card" style="margin-bottom: 10px;">
+                    <h3 style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Score</h3>
+                    <p id="drawer-score" style="font-weight: 600;">-</p>
+                </div>
+                
+                <div class="requirements" style="margin: 10px 0;">
+                    <h3 style="font-size: 0.75rem; color: #6b7280; text-transform: uppercase;">Requirements</h3>
+                    <p id="drawer-requirements" style="font-weight: 600;">-</p>
+                </div>
+
+                <button class="primary-btn" onclick="clearCurrentChat()" style="background-color: #ef4444; width: 100%; margin-top: 20px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 20px; height: 20px;">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    </svg>
+                    Clear Chat
+                </button>
+            </div>
+        </section>
+        
+        <!-- Bulk Send Panel -->
+        <section class="detail-panel" id="bulk-panel" style="display: none; padding: 2rem; background: var(--bg-primary); align-items: center; justify-content: flex-start; overflow-y: auto; height: 100%;">
+            <div class="bulk-inner" style="width: 100%; max-width: 600px; background: var(--bg-surface); color: var(--text-primary); padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin-top: 2rem; margin-bottom: 2rem;">
+                <h2 style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    📣 Bulk Broadcast
+                    <button onclick="hideBulkPanel()" style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 1.2rem;">✖</button>
+                </h2>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Template Name</label>
+                    <input type="text" id="bulk-template" placeholder="e.g. hello_testing_" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; outline: none; font-size: 1rem;">
+                    <small style="color: #6b7280;">The exact name of your approved Meta template.</small>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Language Code</label>
+                    <input type="text" id="bulk-language" value="en" placeholder="e.g. en or en_US" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; outline: none; font-size: 1rem;">
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Header Image (Optional)</label>
+                    <input type="text" id="bulk-image-url" placeholder="Paste image URL here..." style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; outline: none; font-size: 1rem; margin-bottom: 0.5rem;">
+                    <div style="text-align: center; font-weight: bold; margin-bottom: 0.5rem; color: #6b7280;">OR</div>
+                    <input type="file" id="bulk-image-file" accept="image/jpeg, image/png" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; background: white;">
+                    <small style="color: #6b7280; display: block; margin-top: 0.5rem;">If your template requires a picture, paste the public link OR upload a local image (JPEG/PNG).</small>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Template Variables (Optional)</label>
+                    <input type="text" id="bulk-variables" placeholder="e.g. John, 50% off" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; outline: none; font-size: 1rem;">
+                    <small style="color: #6b7280;">Comma-separated values for your template body variables (e.g., {{1}}, {{2}}).</small>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Message Preview / Chat Log</label>
+                    <textarea id="bulk-message-text" rows="2" placeholder="Type the actual text of your template here. This will be shown in the chat window..." style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; outline: none; font-size: 1rem; resize: vertical;"></textarea>
+                    <small style="color: #6b7280;">Because we use Meta Templates, whatever you type here will be saved as the chat log.</small>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Phone Numbers</label>
+                    <textarea id="bulk-numbers" rows="8" placeholder="Paste phone numbers here...&#10;One number per line&#10;Include country code (e.g. 919876543210)" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 4px; outline: none; resize: vertical; font-size: 1rem;"></textarea>
+                </div>
+
+                <button id="bulk-send-btn" class="primary-btn" onclick="sendBulkBroadcast()" style="width: 100%; background-color: #10b981; font-size: 1.1rem; padding: 12px;">🚀 Send Broadcast</button>
+                
+                <div id="bulk-status" style="margin-top: 1rem; padding: 1rem; border-radius: 4px; display: none; background: #f3f4f6;"></div>
+            </div>
+        </section>
+
+        <!-- Meta Ads Dashboard Panel -->
+        <section class="detail-panel" id="ads-panel" style="display: none; padding: 1.5rem; background: var(--bg-primary); flex-direction: column; overflow-y: auto; height: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.25rem 1.5rem;">
+                <div>
+                    <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">🎯 Meta Ads Manager (Facebook & Instagram)</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Create, optimize with AI, preview, manually approve, and track Click-to-WhatsApp and Lead campaigns.</p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button onclick="openNewCampaignModal()" class="primary-btn" style="background: #2563eb; font-weight: 600; padding: 9px 18px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">✨ Create New Campaign</button>
+                    <button onclick="fetchAdCampaigns()" class="refresh-btn" style="padding: 9px 14px; border: 1px solid var(--border-card); background: var(--bg-surface); border-radius: 6px; font-weight: 600;">🔄 Refresh</button>
+                    <button onclick="hideAdsPanel()" style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 1.4rem; padding: 4px 8px;">✖</button>
+                </div>
+            </div>
+
+            <!-- Connected Accounts Summary -->
+            <div id="ads-accounts-bar" style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; gap: 2rem; align-items: center;">
+                    <div style="padding-right: 2rem; border-right: 1px solid var(--border-color);">
+                        <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.5px;">Ad Account</span>
+                        <div id="connected-ad-account" style="font-weight: 700; font-size: 0.95rem; margin-top: 3px; color: var(--text-primary);">Loading Ad Accounts...</div>
+                    </div>
+                    <div style="padding-right: 2rem; border-right: 1px solid var(--border-color);">
+                        <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.5px;">Facebook Page</span>
+                        <div id="connected-page" style="font-weight: 700; font-size: 0.95rem; margin-top: 3px; color: var(--text-primary);">Loading Pages...</div>
+                    </div>
+                    <div>
+                        <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.5px;">Instagram Account</span>
+                        <div id="connected-instagram" style="font-weight: 700; font-size: 0.95rem; margin-top: 3px; color: var(--text-primary);">-</div>
+                    </div>
+                </div>
+                <div>
+                    <span id="whatsapp-status-badge" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">WhatsApp: Not Configured in .env</span>
+                </div>
+            </div>
+
+            <!-- Performance Overview Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.25rem; border-left: 4px solid #3b82f6;">
+                    <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px;">Total Active Campaigns</div>
+                    <div id="metric-active-campaigns" style="font-size: 1.8rem; font-weight: 800; margin-top: 6px; color: var(--text-primary);">0</div>
+                </div>
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.25rem; border-left: 4px solid #10b981;">
+                    <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px;">Attributed Leads & CTWA Inquiries</div>
+                    <div id="metric-attributed-leads" style="font-size: 1.8rem; font-weight: 800; margin-top: 6px; color: #10b981;">0</div>
+                </div>
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.25rem; border-left: 4px solid #8b5cf6;">
+                    <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px;">Total Meta Impressions</div>
+                    <div id="metric-total-impressions" style="font-size: 1.8rem; font-weight: 800; margin-top: 6px; color: #8b5cf6;">0</div>
+                </div>
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.25rem; border-left: 4px solid #f59e0b;">
+                    <div style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px;">Total Spend (USD/INR)</div>
+                    <div id="metric-total-spend" style="font-size: 1.8rem; font-weight: 800; margin-top: 6px; color: #f59e0b;">$0.00</div>
+                </div>
+            </div>
+
+            <!-- Campaigns Table -->
+            <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; overflow: hidden; margin-bottom: 2rem;">
+                <div style="padding: 1.1rem 1.25rem; border-bottom: 2px solid var(--border-color); font-weight: 700; font-size: 1.05rem; display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface);">
+                    <span style="color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                        <span>📊</span> All Advertising Campaigns
+                    </span>
+                    <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); background: var(--table-header-bg); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-color);">Status, Manual Approval & Actions</span>
+                </div>
+                <div id="campaigns-table-container" style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="background: var(--table-header-bg); border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <th style="padding: 12px 18px; border-right: 1px solid var(--border-color);">Campaign Name</th>
+                                <th style="padding: 12px 18px; border-right: 1px solid var(--border-color);">Objective & Destination</th>
+                                <th style="padding: 12px 18px; border-right: 1px solid var(--border-color);">Daily Budget</th>
+                                <th style="padding: 12px 18px; border-right: 1px solid var(--border-color);">Approval</th>
+                                <th style="padding: 12px 18px; border-right: 1px solid var(--border-color);">Status</th>
+                                <th style="padding: 12px 18px; text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="campaigns-table-body">
+                            <tr><td colspan="6" style="padding: 2.5rem; text-align: center; color: var(--text-secondary);">Loading campaigns...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Campaign Creation & AI Wizard Modal -->
+        <div id="campaign-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-content" style="max-width: 850px; width: 95%; max-height: 90vh; overflow-y: auto; text-align: left; padding: 2rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700;">🚀 Meta Ad Campaign Builder</h3>
+                        <p style="margin: 4px 0 0; font-size: 0.85rem; color: var(--text-secondary);">Step-by-step AI copy generation, targeting configuration, and manual approval workflow.</p>
+                    </div>
+                    <button onclick="closeCampaignModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary);">&times;</button>
+                </div>
+
+                <!-- 1. Basics & AI Generation -->
+                <div style="margin-bottom: 1.5rem; background: var(--bg-primary); padding: 1.25rem; border-radius: 8px;">
+                    <h4 style="margin-bottom: 0.75rem; font-size: 1rem; font-weight: 600;">1. AI Copy & Creative Generator</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Campaign Name</label>
+                            <input type="text" id="camp-name" placeholder="e.g. Q4 VR Healthcare Promotion" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Product / Service Name</label>
+                            <input type="text" id="ai-product-name" placeholder="e.g. Oqulix Neuro-Rehabilitation VR" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px;">
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Key Value Proposition & Offer Details</label>
+                        <textarea id="ai-product-desc" rows="2" placeholder="e.g. Interactive VR rehab system for clinics. 30% faster recovery metrics, gamified motor exercises, free clinic demo." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px;"></textarea>
+                    </div>
+                    <button id="btn-generate-ai" onclick="runAiGeneration()" class="primary-btn" style="background: #8b5cf6; display: flex; align-items: center; gap: 6px; padding: 8px 16px;">
+                        ✨ Generate AI Ad Copy & Angles
+                    </button>
+                    <div id="ai-variations-container" style="margin-top: 1rem; display: none;"></div>
+                </div>
+
+                <!-- 2. Ad Creative Content -->
+                <div style="margin-bottom: 1.5rem; background: var(--bg-primary); padding: 1.25rem; border-radius: 8px;">
+                    <h4 style="margin-bottom: 0.75rem; font-size: 1rem; font-weight: 600;">2. Ad Creative & Preview</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div>
+                            <div style="margin-bottom: 0.75rem;">
+                                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Primary Text</label>
+                                <textarea id="camp-primary-text" rows="3" placeholder="Primary text shown above ad..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px;" oninput="updateAdPreview()"></textarea>
+                            </div>
+                            <div style="margin-bottom: 0.75rem;">
+                                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Headline</label>
+                                <input type="text" id="camp-headline" placeholder="Short catchphrase..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px;" oninput="updateAdPreview()">
+                            </div>
+                            <div style="margin-bottom: 0.75rem;">
+                                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Description / Subtitle</label>
+                                <input type="text" id="camp-description" placeholder="e.g. Chat with us on WhatsApp" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px;" oninput="updateAdPreview()">
+                            </div>
+                            <div style="margin-bottom: 0.75rem;">
+                                <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Ad Image (Upload or URL)</label>
+                                <input type="file" id="camp-image-file" accept="image/*" style="width: 100%; margin-bottom: 4px;" onchange="handleAdImageUpload(event)">
+                                <input type="text" id="camp-image-url" placeholder="Or paste public image URL..." style="width: 100%; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px;" oninput="updateAdPreview()">
+                            </div>
+                        </div>
+
+                        <!-- Live Meta Ad Mockup Preview -->
+                        <div>
+                            <div style="font-size: 0.8rem; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary);">Live Facebook & Instagram Ad Preview</div>
+                            <div style="border: 1px solid #d1d5db; border-radius: 8px; background: white; color: #111; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                <div style="padding: 10px 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #f3f4f6;">
+                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #3b82f6; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem;">O</div>
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 0.85rem;">Oqulix Technology</div>
+                                        <div style="font-size: 0.7rem; color: #6b7280;">Sponsored • 🌐</div>
+                                    </div>
+                                </div>
+                                <div id="preview-primary-text" style="padding: 10px 12px; font-size: 0.85rem; line-height: 1.4;">Transform your clinic with state-of-the-art VR rehabilitation.</div>
+                                <div id="preview-image-box" style="width: 100%; height: 180px; background: #e5e7eb; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                    <span style="color: #9ca3af; font-size: 0.85rem;">Ad Creative Image</span>
+                                </div>
+                                <div style="padding: 10px 12px; background: #f9fafb; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f3f4f6;">
+                                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
+                                        <div id="preview-destination-label" style="font-size: 0.7rem; text-transform: uppercase; color: #6b7280;">wa.me • WhatsApp</div>
+                                        <div id="preview-headline" style="font-weight: 700; font-size: 0.9rem;">Chat with Oqulix Specialists</div>
+                                        <div id="preview-desc" style="font-size: 0.75rem; color: #6b7280;">Instant responses on WhatsApp</div>
+                                    </div>
+                                    <button style="background: #25d366; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 600; font-size: 0.8rem; display: flex; align-items: center; gap: 4px;">Send Message</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Meta Advantage+ Audience, Placements & Budget -->
+                <div style="margin-bottom: 1.5rem; background: var(--bg-primary); padding: 1.25rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700;">3. Meta Audience, Budget & Placements</h4>
+                        <span style="background: #e0e7ff; color: #4338ca; font-size: 0.75rem; font-weight: 700; padding: 3px 8px; border-radius: 12px;">Advantage+ Powered</span>
+                    </div>
+
+                    <!-- Destination & Placements -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Goal / Destination</label>
+                            <select id="camp-destination" onchange="onDestinationChange(this.value)" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-surface); color: var(--text-primary); font-weight: 600;">
+                                <option value="WHATSAPP">💬 Get WhatsApp Messages (Click-to-WhatsApp)</option>
+                                <option value="LEAD_GENERATION">📋 Meta Instant Lead Form (Get Leads)</option>
+                                <option value="WEBSITE">🌐 Website Visitors (Drive Traffic)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">
+                                <span>Advantage+ Placements</span>
+                                <span style="color: #10b981; font-weight: 600;">Recommended</span>
+                            </label>
+                            <select id="camp-placements" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-surface); color: var(--text-primary); font-weight: 600;">
+                                <option value="BOTH">✨ Facebook & Instagram (Feeds, Stories, Reels, Explore)</option>
+                                <option value="INSTAGRAM_ONLY">📸 Instagram Only (Feed & Reels)</option>
+                                <option value="FACEBOOK_ONLY">👤 Facebook Only</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- WhatsApp Receiving Phone Number Card (For Click-to-WhatsApp) -->
+                    <div id="whatsapp-number-config" style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 8px; padding: 1.1rem; margin-bottom: 1.25rem; border-left: 4px solid #25d366;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 1.1rem;">📱</span> WhatsApp Receiving Phone Number
+                            </label>
+                            <span style="font-size: 0.72rem; background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 2px 8px; border-radius: 12px; font-weight: 700;">Where incoming ad chats arrive</span>
+                        </div>
+                        <p style="font-size: 0.76rem; color: var(--text-secondary); margin: 0 0 10px 0;">
+                            When users click your ad on Facebook or Instagram, this is the exact WhatsApp number that will receive their message.
+                        </p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">Choose from Connected Page:</label>
+                                <select id="camp-whatsapp-select" onchange="onWhatsAppNumberSelect(this.value)" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.88rem; font-weight: 600; background: var(--bg-surface); color: var(--text-primary);">
+                                    <option value="">Loading linked numbers...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px;">Or Custom WhatsApp Number:</label>
+                                <input type="text" id="camp-whatsapp-number" placeholder="e.g. +91 94970 34866" 
+                                       style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.88rem; font-weight: 600; background: var(--bg-surface); color: var(--text-primary);"
+                                       oninput="updateWhatsAppPreviewNumber(this.value)">
+                            </div>
+                        </div>
+                        <div style="margin-top: 8px; font-size: 0.73rem; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                            <span>💡</span> <span>Include country code (e.g. <strong>+91</strong> for India followed by your 10-digit number).</span>
+                        </div>
+                    </div>
+
+                    <!-- Website URL or Direct WhatsApp Link Input (For Website Visitors) -->
+                    <div id="website-url-config" style="display: none; background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 8px; padding: 1.1rem; margin-bottom: 1.25rem; border-left: 4px solid #3b82f6;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 1.1rem;">🔗</span> Website URL or Direct WhatsApp Link
+                            </label>
+                            <span style="font-size: 0.72rem; background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; padding: 2px 8px; border-radius: 12px; font-weight: 700;">Destination Link</span>
+                        </div>
+                        <p style="font-size: 0.76rem; color: var(--text-secondary); margin: 0 0 10px 0;">
+                            Paste your direct WhatsApp link (e.g. <code>https://wa.me/919497034866...</code>) or your company website URL.
+                        </p>
+                        <div>
+                            <input type="url" id="camp-website-url" 
+                                   value="https://wa.me/919497034866?text=Hi,%20I%20am%20interested%20in%20your%20digital%20marketing%20service" 
+                                   placeholder="https://wa.me/919497034866 or https://yourwebsite.com" 
+                                   style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.9rem; font-weight: 500; background: var(--bg-surface); color: var(--text-primary);"
+                                   oninput="updateWebsitePreviewUrl(this.value)">
+                        </div>
+                        <div style="margin-top: 8px; font-size: 0.73rem; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
+                            <span>💡</span> <span>When people click your ad on Facebook or Instagram, it will immediately open this link!</span>
+                        </div>
+                    </div>
+
+                    <!-- Schedule and Duration (Matching Meta Ads Manager) -->
+                    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1.25rem; margin-bottom: 1.25rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <div>
+                                <h5 style="margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">Schedule and duration</h5>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">Choose when your ad starts and how long it delivers.</div>
+                            </div>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary); cursor: pointer;" title="Schedule information">ℹ️</span>
+                        </div>
+
+                        <!-- Start Date & Time -->
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 6px;">Start date & time</label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div style="position: relative;">
+                                    <input type="date" id="camp-start-date" 
+                                           style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.88rem; font-weight: 600; background: var(--bg-surface); color: var(--text-primary);">
+                                </div>
+                                <div style="position: relative;">
+                                    <input type="time" id="camp-start-time" 
+                                           style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.88rem; font-weight: 600; background: var(--bg-surface); color: var(--text-primary);">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Continuous vs End Date Radios -->
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px; margin-bottom: 4px; background: rgba(37,99,235,0.04);">
+                                <input type="radio" name="camp-duration-type" value="CONTINUOUS" checked onchange="toggleEndDateUI(false)" style="margin-top: 3px; accent-color: #2563eb;">
+                                <div>
+                                    <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">Run ad continuously</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Your ad will run until you've paused it.</div>
+                                </div>
+                            </label>
+
+                            <label style="display: flex; align-items: flex-start; gap: 8px; cursor: pointer; padding: 8px; border-radius: 6px;">
+                                <input type="radio" name="camp-duration-type" value="END_DATE" onchange="toggleEndDateUI(true)" style="margin-top: 3px; accent-color: #2563eb;">
+                                <div>
+                                    <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">Choose end date</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Automatically stop delivery on a set date & time.</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- End Date & Time (Conditional) -->
+                        <div id="end-date-container" style="display: none; margin-bottom: 1rem; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px;">
+                            <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 6px;">End date & time</label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <input type="date" id="camp-end-date" 
+                                       style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.88rem; background: var(--bg-surface); color: var(--text-primary);">
+                                <input type="time" id="camp-end-time" value="23:59"
+                                       style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.88rem; background: var(--bg-surface); color: var(--text-primary);">
+                            </div>
+                        </div>
+
+                        <!-- Business Hours Toggle -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid var(--border-color);">
+                            <div>
+                                <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary);">Run this ad during business hours</div>
+                                <div style="font-size: 0.73rem; color: var(--text-secondary);">People will only see your ads during active hours.</div>
+                            </div>
+                            <label style="position: relative; display: inline-block; width: 40px; height: 22px;">
+                                <input type="checkbox" id="camp-business-hours" style="opacity: 0; width: 0; height: 0;">
+                                <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; border-radius: 22px; transition: .3s;"
+                                      onclick="this.previousElementSibling.checked = !this.previousElementSibling.checked; this.style.backgroundColor = this.previousElementSibling.checked ? '#2563eb' : '#cbd5e1';"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Daily Budget Card with Slider & Payment Breakdown (Matching Meta) -->
+                    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+                            <div>
+                                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">Daily Budget</span>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">Estimated 7.7K - 14.3K impressions per day</div>
+                            </div>
+                            <div style="font-size: 1.7rem; font-weight: 800; color: #2563eb;">
+                                ₹<span id="budget-display">500</span><span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);"> /day</span>
+                            </div>
+                        </div>
+
+                        <input type="range" id="camp-budget-slider" min="191" max="10000" step="50" value="500" 
+                               style="width: 100%; accent-color: #2563eb; cursor: pointer;" 
+                               oninput="onBudgetChange(this.value)">
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                            <span style="font-size: 0.75rem; color: var(--text-secondary);">Min: ₹191.00</span>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 0.8rem; color: var(--text-secondary);">Custom ₹:</span>
+                                <input type="number" id="camp-budget" value="500" min="191" 
+                                       style="width: 90px; padding: 4px 8px; border: 1px solid var(--border-color); border-radius: 4px; font-size: 0.85rem; font-weight: 600;"
+                                       oninput="onBudgetChange(this.value)">
+                            </div>
+                            <span style="font-size: 0.75rem; color: var(--text-secondary);">Max: ₹10,000+</span>
+                        </div>
+                        <div style="margin-top: 8px; font-size: 0.75rem; color: #6b7280; display: flex; align-items: center; gap: 4px;">
+                            ℹ️ ₹191.00 is the recommended minimum daily budget for India to avoid zero deliveries.
+                        </div>
+
+                        <!-- Meta Payment Summary with Estimated GST breakdown -->
+                        <div style="margin-top: 1rem; padding: 12px; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 6px;">
+                            <div style="font-size: 0.8rem; font-weight: 700; margin-bottom: 6px; color: var(--text-primary);">Payment summary</div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 4px;">
+                                <span>Budget</span>
+                                <span style="font-weight: 600; color: var(--text-primary);">₹<span id="summary-budget">500.00</span> INR</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 6px;">
+                                <span>Estimated GST (18%)</span>
+                                <span style="font-weight: 600; color: var(--text-primary);">₹<span id="summary-gst">90.00</span> INR</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; color: var(--text-primary); padding-top: 6px; border-top: 1px solid var(--border-color);">
+                                <span>Daily total budget</span>
+                                <span style="color: #2563eb;">₹<span id="summary-total">590.00</span> INR</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Target Audience (Gender, Age, Locations) -->
+                    <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+                        <h5 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; font-weight: 700;">Audience Details</h5>
+
+                        <!-- Gender Selector -->
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 6px;">Gender</label>
+                            <div style="display: flex; gap: 10px;">
+                                <label style="flex: 1; text-align: center; border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+                                    <input type="radio" name="camp-gender" value="ALL" checked style="margin-right: 4px;"> All
+                                </label>
+                                <label style="flex: 1; text-align: center; border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+                                    <input type="radio" name="camp-gender" value="MEN" style="margin-right: 4px;"> Men
+                                </label>
+                                <label style="flex: 1; text-align: center; border: 1px solid var(--border-color); padding: 8px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+                                    <input type="radio" name="camp-gender" value="WOMEN" style="margin-right: 4px;"> Women
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Age Range -->
+                        <div style="margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <label style="font-size: 0.8rem; font-weight: 600;">Age Range</label>
+                                <span style="font-size: 0.85rem; font-weight: 700; color: #2563eb;">
+                                    <span id="age-min-display">21</span> - <span id="age-max-display">65+</span>
+                                </span>
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.7rem; color: var(--text-secondary);">Min Age</label>
+                                    <input type="number" id="camp-age-min" value="21" min="18" max="65" 
+                                           style="width: 100%; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px;"
+                                           oninput="document.getElementById('age-min-display').innerText = this.value;">
+                                </div>
+                                <span style="margin-top: 14px; font-weight: bold; color: var(--text-secondary);">-</span>
+                                <div style="flex: 1;">
+                                    <label style="font-size: 0.7rem; color: var(--text-secondary);">Max Age</label>
+                                    <input type="number" id="camp-age-max" value="65" min="18" max="65" 
+                                           style="width: 100%; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px;"
+                                           oninput="document.getElementById('age-max-display').innerText = this.value == 65 ? '65+' : this.value;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Locations with Live Meta Autocomplete & Interactive Radius Map -->
+                        <div style="margin-bottom: 1.25rem;">
+                            <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Locations</label>
+                            
+                            <!-- Search Input with Auto-complete Dropdown -->
+                            <div style="position: relative; margin-bottom: 8px;">
+                                <div style="display: flex; align-items: center; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-surface); padding: 4px 10px;">
+                                    <span style="color: var(--text-secondary); margin-right: 8px; font-size: 1rem;">🔍</span>
+                                    <input type="text" id="camp-location-search" 
+                                           placeholder="Type to add more locations (e.g. Ponnani, Kochi, Thrissur...)" 
+                                           style="border: none; outline: none; background: transparent; width: 100%; padding: 6px 0; color: var(--text-primary); font-size: 0.9rem;"
+                                           autocomplete="off"
+                                           oninput="handleLocationInput(this.value)">
+                                </div>
+
+                                <!-- Autocomplete Results Dropdown -->
+                                <div id="location-suggestions-dropdown" 
+                                     style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #ffffff; color: #1e293b; border: 2px solid #2563eb; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.35), 0 8px 10px -6px rgba(0, 0, 0, 0.25); max-height: 280px; overflow-y: auto; z-index: 99999;">
+                                </div>
+                            </div>
+
+                            <!-- Selected Locations Badges -->
+                            <div id="selected-locations-container" style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">
+                                <div id="location-chip" style="display: none; align-items: center; gap: 8px; background: #2563eb; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                                    <span id="chip-text">📍 Select a location</span>
+                                    <span style="font-size: 0.75rem; background: rgba(255,255,255,0.25); color: white; border-radius: 10px; padding: 2px 8px;">+<span id="chip-radius">40</span> km</span>
+                                    <button type="button" onclick="clearSelectedLocation()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; line-height: 1; padding: 0 2px;">✖</button>
+                                </div>
+                                <div id="no-location-msg" style="font-size: 0.8rem; color: var(--text-secondary); padding: 4px 0;">
+                                    ℹ️ No specific location pinned yet (defaults to all India). Type in the search box above to pin any town, city, or district.
+                                </div>
+                            </div>
+
+                            <!-- Interactive Leaflet Map for Location & Radius Control -->
+                            <div id="map-wrapper" style="display: none; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; background: white;">
+                                <div style="position: relative;">
+                                    <div id="audience-map" style="width: 100%; height: 260px; z-index: 1;"></div>
+                                    <div style="position: absolute; top: 10px; right: 10px; z-index: 500; background: white; border: 1px solid #d1d5db; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; color: #374151; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer;" onclick="centerMapOnSelected()">
+                                        📍 Center on Location
+                                    </div>
+                                </div>
+
+                                <!-- Radius Range Slider -->
+                                <div style="padding: 10px 14px; background: var(--bg-surface); border-top: 1px solid var(--border-color); display: flex; align-items: center; gap: 14px;">
+                                    <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); min-width: 60px;">
+                                        <span id="radius-val-display">40</span> km
+                                    </div>
+                                    <input type="range" id="camp-radius-slider" min="5" max="80" step="5" value="40" 
+                                           style="flex: 1; accent-color: #2563eb; cursor: pointer;" 
+                                           oninput="updateAudienceRadius(this.value)">
+                                    <span style="font-size: 0.75rem; color: var(--text-secondary);">Radius: 5km - 80km</span>
+                                </div>
+                            </div>
+                            <input type="hidden" id="camp-locations" value="India">
+                        </div>
+
+                        <!-- Interest Targeting -->
+                        <div>
+                            <label style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px;">Detailed Targeting (Interests & Demographics)</label>
+                            <input type="text" id="camp-interests" placeholder="e.g. Furniture, Interior design, Home improvement, Living room sofa" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions: Save Draft vs Approval Warning -->
+                <div style="border-top: 1px solid var(--border-color); padding-top: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="font-size: 0.85rem; color: #f59e0b; display: flex; align-items: center; gap: 6px;">
+                        ⚠️ Saved as Draft. Must be explicitly approved before publishing to Meta.
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="closeCampaignModal()" class="btn-cancel" style="padding: 8px 16px;">Cancel</button>
+                        <button onclick="saveCampaignDraft()" class="primary-btn" style="background: #10b981; padding: 8px 20px;">💾 Save Draft</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="empty-state" class="empty-state">
+            <p>Select a lead to view details.</p>
+        </div>
+    </main>
+
+    <!-- Media Preview Modal -->
+    <div id="media-preview-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content media-modal-content">
+            <h3 class="modal-title">Send Media</h3>
+            <div id="media-preview-container" class="media-preview-container">
+                <!-- Preview will be injected here -->
+            </div>
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button class="primary-btn btn-danger" onclick="cancelMediaSend()">Cancel</button>
+                <button class="primary-btn" id="confirm-media-btn" onclick="confirmMediaSend()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Options Modal -->
+    <div id="delete-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content delete-modal-content">
+            <h3 class="modal-title delete-title">Delete Message?</h3>
+            <p class="modal-text">This cannot be undone.</p>
+            <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                <button id="btn-delete-everyone" class="primary-btn btn-danger" style="width: 100%;">Delete for Everyone</button>
+                <button id="btn-delete-me" class="primary-btn btn-secondary" style="width: 100%;">Delete for Me</button>
+                <button id="btn-delete-cancel" class="btn-cancel" onclick="document.getElementById('delete-modal').style.display='none'">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js?v=16"></script>
+</body>
+</html>
