@@ -264,31 +264,38 @@ async function handleMetaWebhook(req, res) {
     }
 
     // B. WhatsApp Cloud API event
-    if (body.object === 'whatsapp_business_account' || body.object) {
-      if (
-        body.entry &&
-        body.entry[0].changes &&
-        body.entry[0].changes[0] &&
-        body.entry[0].changes[0].value.messages &&
-        body.entry[0].changes[0].value.messages[0]
-      ) {
-        let phoneNumber = body.entry[0].changes[0].value.contacts[0].wa_id;
-        let customerName = body.entry[0].changes[0].value.contacts[0].profile.name;
-        let msg = body.entry[0].changes[0].value.messages[0];
-        
-        if (msg.type === "text" || msg.type === "audio" || msg.type === "button" || msg.type === "interactive") {
-          let messageId = msg.id;
-          
-          if (processedMessages.has(messageId)) {
-            console.log(`[WhatsApp] Ignoring duplicate message ID: ${messageId}`);
-            return res.sendStatus(200);
-          }
-          processedMessages.add(messageId);
+    if (body.object === 'whatsapp_business_account' || body.entry) {
+      if (Array.isArray(body.entry)) {
+        for (const entry of body.entry) {
+          if (Array.isArray(entry.changes)) {
+            for (const change of entry.changes) {
+              const value = change.value;
+              if (value && Array.isArray(value.messages)) {
+                const contact = value.contacts?.[0] || {};
+                const phoneNumber = contact.wa_id || value.messages[0].from;
+                const customerName = contact.profile?.name || 'WhatsApp Customer';
 
-          // Process message asynchronously but sequentially per user so we can return 200 OK immediately
-          processSequentially(phoneNumber, () => 
-            processIncomingWhatsApp(phoneNumber, customerName, msg, messageId)
-          );
+                for (const msg of value.messages) {
+                  if (msg.type === "text" || msg.type === "audio" || msg.type === "button" || msg.type === "interactive") {
+                    const messageId = msg.id;
+
+                    if (processedMessages.has(messageId)) {
+                      console.log(`[WhatsApp] Ignoring duplicate message ID: ${messageId}`);
+                      continue;
+                    }
+                    processedMessages.add(messageId);
+
+                    console.log(`[WhatsApp Incoming] Message from ${phoneNumber} (${customerName}):`, msg.text?.body || msg.type);
+
+                    // Process message sequentially per user
+                    processSequentially(phoneNumber, () => 
+                      processIncomingWhatsApp(phoneNumber, customerName, msg, messageId)
+                    );
+                  }
+                }
+              }
+            }
+          }
         }
       }
       return res.sendStatus(200);
