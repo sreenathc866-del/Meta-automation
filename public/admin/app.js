@@ -824,7 +824,7 @@ async function fetchConnectedAccounts() {
                 // Dynamically update Top Up link to direct ad account billing hub
                 const topUpBtn = document.getElementById('top-up-billing-btn');
                 if (topUpBtn && acc.account_id) {
-                    topUpBtn.href = `https://business.facebook.com/latest/billing_hub/accounts?payment_account_id=${acc.account_id}&asset_id=${acc.account_id}`;
+                    topUpBtn.href = `https://business.facebook.com/latest/billing_hub/accounts?business_id=237173455626416&payment_account_id=${acc.account_id}&asset_id=${acc.account_id}`;
                 }
 
                 // Render Available Balance & Total Spend from Meta Account
