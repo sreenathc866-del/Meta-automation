@@ -321,8 +321,16 @@ app.get('/api/admin/leads', async (req, res) => {
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     res.json(data);
   } catch (error) {
-    console.warn('[Admin] Could not read leads from Firestore:', error.message);
-    res.json([]);
+    console.warn('[Admin] Failed with orderBy updated_at, trying unordered get:', error.message);
+    try {
+      const snap = await db.collection('leads').get();
+      const fallbackData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      fallbackData.sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0));
+      return res.json(fallbackData);
+    } catch (e2) {
+      console.error('[Admin] Could not read leads from database:', e2.message);
+      res.json([]);
+    }
   }
 });
 
