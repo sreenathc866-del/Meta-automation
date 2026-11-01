@@ -26,8 +26,20 @@ if (getApps().length === 0) {
       storageBucket: storageBucket
     });
     hasValidCredentials = true;
+  } else if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+    console.log(`[Firebase] Initializing using environment variables (FIREBASE_CLIENT_EMAIL & FIREBASE_PRIVATE_KEY)`);
+    initializeApp({
+      credential: cert({
+        projectId: projectId,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+      }),
+      projectId: projectId,
+      storageBucket: storageBucket
+    });
+    hasValidCredentials = true;
   } else {
-    console.warn(`[Firebase] Warning: ${serviceAccountPath} not found. Running in fallback mode without crashing.`);
+    console.warn(`[Firebase] Warning: Service account key or environment variables not found. Running in local JSON storage fallback mode.`);
   }
 
   // Helper for in-memory leads/campaigns fallback
