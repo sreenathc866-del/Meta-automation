@@ -336,13 +336,22 @@ async function loadLeadDetail(lead) {
 
 function updateToggleBtn() {
     const btn = document.getElementById('ai-toggle-btn');
+    const hint = document.getElementById('ai-status-hint');
     if (!btn) return;
     if (isAiPaused) {
-        btn.innerText = "▶️ Resume AI";
+        btn.innerHTML = "▶️ Resume AI";
         btn.classList.add('paused');
+        if (hint) {
+            hint.innerText = "⏸ Bot paused (Human active)";
+            hint.style.color = "#f59e0b";
+        }
     } else {
-        btn.innerText = "⏸ Pause AI (10m)";
+        btn.innerHTML = "⏸ Pause AI (10m)";
         btn.classList.remove('paused');
+        if (hint) {
+            hint.innerText = "⚡ Bot active (Auto-replying)";
+            hint.style.color = "#10b981";
+        }
     }
 }
 

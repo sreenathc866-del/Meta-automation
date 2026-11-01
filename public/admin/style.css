@@ -368,20 +368,34 @@ body.dark-mode .chat-window::-webkit-scrollbar-thumb {
     flex: 0 0 auto;
     white-space: nowrap;
     width: auto;
-    background-color: #4b5563;
-    padding: 5px 12px;
-    font-size: 0.78rem;
-    border-radius: 16px;
+    background-color: #10b981; /* Fresh Emerald Green when AI is active */
+    color: #ffffff !important;
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    border-radius: 20px;
+    border: none;
     min-width: auto;
-    font-weight: 600;
-}
-
-.ai-toggle-btn.paused {
-    background-color: #3b82f6;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 }
 
 .ai-toggle-btn:hover {
-    background-color: #374151;
+    background-color: #059669;
+}
+
+.ai-toggle-btn.paused {
+    background-color: #f59e0b; /* Bright Amber / Orange when AI is paused */
+    color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(245, 158, 11, 0.4);
+}
+
+.ai-toggle-btn.paused:hover {
+    background-color: #d97706;
 }
 
 .admin-input {
@@ -732,22 +746,21 @@ body.dark-mode .action-footer button {
 body.dark-mode .media-btn,
 body.dark-mode .voice-btn,
 body.dark-mode .ai-toggle-btn {
-    background-color: #2a3942;
-    border-color: #2a3942;
+    background-color: #10b981;
+    color: #ffffff !important;
 }
 
 body.dark-mode .ai-toggle-btn.paused {
-    background-color: #005c4b; /* Distinct active state in dark mode */
+    background-color: #f59e0b;
+    color: #ffffff !important;
 }
 
-body.dark-mode .media-btn:hover,
-body.dark-mode .voice-btn:hover,
 body.dark-mode .ai-toggle-btn:hover {
-    background-color: #3b4a54;
+    background-color: #059669;
 }
 
 body.dark-mode .ai-toggle-btn.paused:hover {
-    background-color: #06725f;
+    background-color: #d97706;
 }
 
 body.dark-mode .action-footer .send-msg-btn {
