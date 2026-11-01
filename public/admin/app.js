@@ -156,8 +156,11 @@ async function loadLeadDetail(lead) {
     // Fetch conversation
     try {
         const response = await fetch(`/api/admin/leads/${lead.id}/conversations`);
-        const messages = await response.json();
+        let messages = await response.json();
         
+        // Ensure messages are strictly sorted chronologically: oldest at top, newest at bottom
+        messages.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+
         const chatWindow = document.getElementById('chat-window');
         chatWindow.innerHTML = '';
         
