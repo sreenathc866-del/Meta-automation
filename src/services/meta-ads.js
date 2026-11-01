@@ -169,6 +169,7 @@ async function createAdSet(adAccountId, {
     daily_budget: dailyBudgetInCents, // e.g., 500 for $5.00 or local currency sub-units
     billing_event: billingEvent,
     optimization_goal: optimizationGoal,
+    bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
     status: 'PAUSED',
     targeting: targeting || {
       geo_locations: { countries: ['IN'] },
