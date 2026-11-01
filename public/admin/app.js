@@ -720,6 +720,25 @@ async function fetchConnectedAccounts() {
             if (connectedAdAccounts.length > 0) {
                 const acc = connectedAdAccounts[0];
                 document.getElementById('connected-ad-account').innerText = `${acc.name} (${acc.account_id})`;
+
+                // Render Available Balance & Total Spend from Meta Account
+                const balanceEl = document.getElementById('metric-account-balance');
+                if (balanceEl) {
+                    const currency = acc.currency === 'INR' ? '₹' : (acc.currency === 'USD' ? '$' : `${acc.currency} `);
+                    // Meta returns balance/amount_spent in cents / subunits (divide by 100) or direct number
+                    if (acc.balance !== undefined && acc.balance !== null) {
+                        const balNum = (parseFloat(acc.balance) / 100).toFixed(2);
+                        balanceEl.innerText = `${currency}${balNum}`;
+                    } else {
+                        balanceEl.innerText = `${currency}0.00`;
+                    }
+
+                    if (acc.amount_spent !== undefined && acc.amount_spent !== null) {
+                        const spentNum = (parseFloat(acc.amount_spent) / 100).toFixed(2);
+                        const spendEl = document.getElementById('metric-total-spend');
+                        if (spendEl) spendEl.innerText = `${currency}${spentNum}`;
+                    }
+                }
             } else {
                 document.getElementById('connected-ad-account').innerText = 'Primary Company Account Connected';
             }
