@@ -60,14 +60,47 @@ function setFilter(filterType) {
     renderLeads();
 }
 
-async function fetchLeads() {
+let isFetchingLeads = false;
+let lastKnownMessagesCount = 0;
+
+async function fetchLeads(silent = false) {
+    if (isFetchingLeads) return;
+    isFetchingLeads = true;
     try {
         const response = await fetch('/api/admin/leads');
+        if (!response.ok) throw new Error('Failed to fetch leads');
         allLeadsCache = await response.json();
         renderLeads();
+        
+        // If a lead is currently selected, refresh its conversation in the background
+        if (currentLeadId) {
+            refreshActiveConversation();
+        }
     } catch (error) {
-        console.error('Error fetching leads:', error);
-        document.getElementById('leads-list').innerHTML = '<div class="loading">Error loading leads.</div>';
+        if (!silent) {
+            console.error('Error fetching leads:', error);
+            document.getElementById('leads-list').innerHTML = '<div class="loading">Error loading leads.</div>';
+        }
+    } finally {
+        isFetchingLeads = false;
+    }
+}
+
+async function refreshActiveConversation() {
+    if (!currentLeadId) return;
+    try {
+        const response = await fetch(`/api/admin/leads/${currentLeadId}/conversations`);
+        if (!response.ok) return;
+        let messages = await response.json();
+        messages.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
+
+        // Only redraw if the number of messages or content changed
+        if (messages.length !== lastKnownMessagesCount) {
+            lastKnownMessagesCount = messages.length;
+            renderConversationMessages(messages);
+        }
+    } catch (e) {
+        // Silent fail for polling
     }
 }
 
@@ -93,7 +126,12 @@ function renderLeads() {
     
     leadsToRender.forEach(lead => {
         const card = document.createElement('div');
-        card.className = 'lead-card';
+        const isActive = (currentLeadId === lead.id);
+        card.className = `lead-card ${isActive ? 'active' : ''}`;
+        if (isActive) {
+            card.style.borderLeft = '4px solid #3b82f6';
+            card.style.background = 'var(--bg-secondary, #f1f5f9)';
+        }
         card.onclick = () => loadLeadDetail(lead);
         
         const timeStr = new Date(lead.updated_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -135,8 +173,90 @@ function switchMainPanel(panelName) {
     if (adsPanel) adsPanel.style.display = (panelName === 'ads') ? 'flex' : 'none';
 }
 
+function renderConversationMessages(messages) {
+    const chatWindow = document.getElementById('chat-window');
+    if (!chatWindow) return;
+    chatWindow.innerHTML = '';
+    
+    // Calculate current AI state
+    const humanInterventions = messages.filter(msg => 
+        msg.sender === 'admin' || (msg.sender === 'system' && (msg.message === 'AI_PAUSED' || msg.message === 'AI_RESUMED'))
+    );
+    
+    isAiPaused = false;
+    if (humanInterventions.length > 0) {
+        const lastIntervention = humanInterventions[humanInterventions.length - 1];
+        if (lastIntervention.message !== 'AI_RESUMED') {
+            const timeDiff = new Date() - new Date(lastIntervention.timestamp);
+            if (timeDiff < 10 * 60 * 1000) {
+                isAiPaused = true;
+            }
+        }
+    }
+    updateToggleBtn();
+    
+    messages.forEach(msg => {
+        const bubble = document.createElement('div');
+        
+        let bubbleClass = 'ai';
+        if (msg.sender === 'customer') bubbleClass = 'customer';
+        else if (msg.sender === 'admin') bubbleClass = 'admin';
+        else if (msg.sender === 'system') bubbleClass = 'system';
+        
+        bubble.className = `bubble ${bubbleClass}`;
+        
+        let timeStr = "";
+        if (msg.timestamp) {
+           timeStr = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+        
+        // Add tick mark for admin/ai messages
+        let tickHtml = "";
+        if (msg.sender === 'admin' || msg.sender === 'ai') {
+            tickHtml = "<span>✅</span>";
+        }
+        
+        const deleteSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 14px; height: 14px; color: #ef4444;"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>`;
+        const deleteHtml = msg.id ? `<button onclick="deleteMessage('${msg.id}', this)" style="background:none; border:none; cursor:pointer; padding: 0; opacity: 1; margin-right: 4px; display: flex; align-items: center;" title="Delete message">${deleteSvg}</button>` : '';
+        
+        const timeHtml = `<div style="font-size: 0.7rem; text-align: right; margin-top: 4px; display: flex; justify-content: flex-end; align-items: center; gap: 4px;">
+            ${deleteHtml}
+            <span style="opacity: 0.6; display: flex; align-items: center; gap: 4px;">
+                <span>${timeStr}</span>
+                ${tickHtml}
+            </span>
+        </div>`;
+        
+        let contentHtml = "";
+        if (msg.message && msg.message.startsWith('[Voice Message] ')) {
+            const url = msg.message.replace('[Voice Message] ', '');
+            contentHtml = `🎤 Voice Note<br><audio controls src="${url}" style="margin-top:5px; width: 220px;"></audio>`;
+        } else if (msg.message && msg.message.startsWith('[Audio] ')) {
+            const url = msg.message.replace('[Audio] ', '');
+            contentHtml = `👨‍💻 Admin: 🎤 Audio<br><audio controls src="${url}" style="margin-top:5px; width: 220px;"></audio>`;
+        } else if (msg.message && msg.message.startsWith('[Image] ')) {
+            const url = msg.message.replace('[Image] ', '');
+            contentHtml = `👨‍💻 Admin: 🖼️ Image<br><img src="${url}" style="margin-top:5px; max-width: 220px; border-radius: 6px;" />`;
+        } else if (msg.message && msg.message.startsWith('[Video] ')) {
+            const url = msg.message.replace('[Video] ', '');
+            contentHtml = `👨‍💻 Admin: 🎥 Video<br><video controls src="${url}" style="margin-top:5px; max-width: 220px; border-radius: 6px;"></video>`;
+        } else {
+            const rawMsg = msg.message || '';
+            const escapedText = rawMsg.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            contentHtml = msg.sender === 'admin' ? `👨‍💻 Admin: ${escapedText}` : escapedText;
+        }
+        
+        bubble.innerHTML = contentHtml + timeHtml;
+        chatWindow.appendChild(bubble);
+    });
+    
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
 async function loadLeadDetail(lead) {
     currentLeadId = lead.id;
+    lastKnownMessagesCount = 0;
+    renderLeads(); // update active card highlight
     switchMainPanel('detail');
     
     // Populate header details
@@ -157,93 +277,12 @@ async function loadLeadDetail(lead) {
     try {
         const response = await fetch(`/api/admin/leads/${lead.id}/conversations`);
         let messages = await response.json();
-        
-        // Ensure messages are strictly sorted chronologically: oldest at top, newest at bottom
         messages.sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
-
-        const chatWindow = document.getElementById('chat-window');
-        chatWindow.innerHTML = '';
-        
-        // Calculate current AI state
-        const humanInterventions = messages.filter(msg => 
-            msg.sender === 'admin' || (msg.sender === 'system' && (msg.message === 'AI_PAUSED' || msg.message === 'AI_RESUMED'))
-        );
-        
-        isAiPaused = false;
-        if (humanInterventions.length > 0) {
-            const lastIntervention = humanInterventions[humanInterventions.length - 1];
-            if (lastIntervention.message !== 'AI_RESUMED') {
-                const timeDiff = new Date() - new Date(lastIntervention.timestamp);
-                if (timeDiff < 10 * 60 * 1000) {
-                    isAiPaused = true;
-                }
-            }
-        }
-        updateToggleBtn();
-        
-        messages.forEach(msg => {
-            const bubble = document.createElement('div');
-            
-            let bubbleClass = 'ai';
-            if (msg.sender === 'customer') bubbleClass = 'customer';
-            else if (msg.sender === 'admin') bubbleClass = 'admin';
-            else if (msg.sender === 'system') bubbleClass = 'system';
-            
-            bubble.className = `bubble ${bubbleClass}`;
-            
-            let timeStr = "";
-            if (msg.timestamp) {
-               timeStr = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            }
-            
-            // Add tick mark for admin/ai messages
-            let tickHtml = "";
-            if (msg.sender === 'admin' || msg.sender === 'ai') {
-                tickHtml = "<span>✅</span>"; // Assuming already sent since it's in the DB
-            }
-            
-            const deleteSvg = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 14px; height: 14px; color: #ef4444;"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>`;
-            const deleteHtml = msg.id ? `<button onclick="deleteMessage('${msg.id}', this)" style="background:none; border:none; cursor:pointer; padding: 0; opacity: 1; margin-right: 4px; display: flex; align-items: center;" title="Delete message">${deleteSvg}</button>` : '';
-            
-            const timeHtml = `<div style="font-size: 0.7rem; text-align: right; margin-top: 4px; display: flex; justify-content: flex-end; align-items: center; gap: 4px;">
-                ${deleteHtml}
-                <span style="opacity: 0.6; display: flex; align-items: center; gap: 4px;">
-                    <span>${timeStr}</span>
-                    ${tickHtml}
-                </span>
-            </div>`;
-            
-            let contentHtml = "";
-            if (msg.message.startsWith('[Voice Message] ')) {
-                const url = msg.message.replace('[Voice Message] ', '');
-                contentHtml = `🎤 Voice Note<br><audio controls src="${url}" style="margin-top:5px; width: 220px;"></audio>`;
-            } else if (msg.message.startsWith('[Audio] ')) {
-                const url = msg.message.replace('[Audio] ', '');
-                contentHtml = `👨‍💻 Admin: 🎤 Audio<br><audio controls src="${url}" style="margin-top:5px; width: 220px;"></audio>`;
-            } else if (msg.message.startsWith('[Image] ')) {
-                const url = msg.message.replace('[Image] ', '');
-                contentHtml = `👨‍💻 Admin: 🖼️ Image<br><img src="${url}" style="margin-top:5px; max-width: 220px; border-radius: 6px;" />`;
-            } else if (msg.message.startsWith('[Video] ')) {
-                const url = msg.message.replace('[Video] ', '');
-                contentHtml = `👨‍💻 Admin: 🎥 Video<br><video controls src="${url}" style="margin-top:5px; max-width: 220px; border-radius: 6px;"></video>`;
-            } else {
-                // Escape HTML for text messages
-                const escapedText = msg.message.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                contentHtml = msg.sender === 'admin' ? `👨‍💻 Admin: ${escapedText}` : escapedText;
-            }
-            
-            bubble.innerHTML = contentHtml + timeHtml;
-            
-            chatWindow.appendChild(bubble);
-        });
-        
-        // Scroll to bottom
-        chatWindow.scrollTop = chatWindow.scrollHeight;
+        lastKnownMessagesCount = messages.length;
+        renderConversationMessages(messages);
     } catch (error) {
         console.error('Error fetching conversations:', error);
     }
-    
-    // The button state is now handled by updateToggleBtn() above
 }
 
 function updateToggleBtn() {
@@ -1554,3 +1593,8 @@ async function viewCampaignInsights(id) {
 
 // Initial load
 fetchLeads();
+
+// Automatic Live Sync: Automatically poll every 3 seconds so incoming messages & AI replies show up in real-time
+setInterval(() => {
+    fetchLeads(true); // silent polling
+}, 3000);
