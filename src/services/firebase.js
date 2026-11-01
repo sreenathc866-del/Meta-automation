@@ -17,29 +17,47 @@ if (getApps().length === 0) {
     : path.resolve(process.cwd(), 'serviceAccountKey.json');
 
   let hasValidCredentials = false;
-  if (fs.existsSync(serviceAccountPath)) {
-    console.log(`[Firebase] Initializing with service account key: ${serviceAccountPath}`);
-    const serviceAccount = require(serviceAccountPath);
-    initializeApp({
-      credential: cert(serviceAccount),
-      projectId: projectId,
-      storageBucket: storageBucket
-    });
-    hasValidCredentials = true;
-  } else if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
-    console.log(`[Firebase] Initializing using environment variables (FIREBASE_CLIENT_EMAIL & FIREBASE_PRIVATE_KEY)`);
-    initializeApp({
-      credential: cert({
+  try {
+    if (fs.existsSync(serviceAccountPath)) {
+      console.log(`[Firebase] Initializing with service account key file: ${serviceAccountPath}`);
+      const serviceAccount = require(serviceAccountPath);
+      initializeApp({
+        credential: cert(serviceAccount),
         projectId: projectId,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-      }),
-      projectId: projectId,
-      storageBucket: storageBucket
-    });
-    hasValidCredentials = true;
-  } else {
-    console.warn(`[Firebase] Warning: Service account key or environment variables not found. Running in local JSON storage fallback mode.`);
+        storageBucket: storageBucket
+      });
+      hasValidCredentials = true;
+    } else if (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64) {
+      console.log(`[Firebase] Initializing from FIREBASE_SERVICE_ACCOUNT_BASE64`);
+      const decodedJson = JSON.parse(Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8'));
+      initializeApp({
+        credential: cert(decodedJson),
+        projectId: projectId,
+        storageBucket: storageBucket
+      });
+      hasValidCredentials = true;
+    } else if (process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+      console.log(`[Firebase] Initializing using environment variables (FIREBASE_CLIENT_EMAIL & FIREBASE_PRIVATE_KEY)`);
+      let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+      if (privateKey.includes('\\n')) {
+        privateKey = privateKey.replace(/\\n/g, '\n');
+      }
+      initializeApp({
+        credential: cert({
+          projectId: projectId,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL.trim(),
+          privateKey: privateKey.trim()
+        }),
+        projectId: projectId,
+        storageBucket: storageBucket
+      });
+      hasValidCredentials = true;
+    } else {
+      console.warn(`[Firebase] Warning: Neither serviceAccountKey.json nor valid FIREBASE_CLIENT_EMAIL/PRIVATE_KEY found.`);
+    }
+  } catch (initErr) {
+    console.error(`[Firebase] Error initializing Firebase Admin:`, initErr.message);
+    hasValidCredentials = false;
   }
 
   // Helper for in-memory leads/campaigns fallback
