@@ -615,6 +615,33 @@ body.dark-mode .chat-window::-webkit-scrollbar-thumb {
     .ads-metrics-grid > div:last-child {
         grid-column: span 2;
     }
+
+    .campaigns-table {
+        min-width: 650px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1200px) {
+    .ads-metrics-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 0.75rem !important;
+    }
+
+    .campaigns-table {
+        min-width: 700px;
+    }
+}
+
+.campaigns-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.campaigns-table {
+    width: 100%;
+    min-width: 700px;
+    border-collapse: collapse;
 }
 
 /* --- Dark Mode Styles --- */
@@ -833,64 +860,125 @@ body.dark-mode .requirements {
 }
 
 .delete-modal-content {
-    padding: 25px;
+    padding: 28px 24px 20px;
     width: 90%;
-    max-width: 320px;
+    max-width: 340px;
+    border-radius: 16px;
+    text-align: center;
+    background: #ffffff;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
 }
 
 .media-modal-content {
-    padding: 20px;
+    padding: 24px;
     width: 90%;
-    max-width: 400px;
+    max-width: 420px;
+    border-radius: 16px;
+    text-align: center;
+    background: #ffffff;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
 }
 
 .modal-title {
-    margin-bottom: 15px;
+    margin-bottom: 16px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #111827;
 }
 
 .delete-title {
     margin-top: 0;
-    margin-bottom: 5px;
-    font-size: 1.1rem;
+    margin-bottom: 6px;
+    font-size: 1.15rem;
+    font-weight: 700;
     color: #111827;
 }
 
 .modal-text {
     color: #6b7280;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     margin-bottom: 20px;
 }
 
 .media-preview-container {
     width: 100%;
-    max-height: 300px;
+    max-height: 340px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     overflow: hidden;
-    background: #f3f4f6;
-    border-radius: 8px;
+    background: #f8fafc;
+    border-radius: 12px;
 }
 
 .btn-danger {
     background-color: #ef4444 !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 10px 16px !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    cursor: pointer !important;
+    transition: background 0.15s ease;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626 !important;
 }
 
 .btn-secondary {
     background-color: #f3f4f6 !important;
-    color: #111827 !important;
-    border: 1px solid #d1d5db !important;
+    color: #1f2937 !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    padding: 10px 16px !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    cursor: pointer !important;
+    transition: background 0.15s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #e5e7eb !important;
+}
+
+#confirm-media-btn {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 10px 16px !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    flex: 1;
+    cursor: pointer !important;
+    transition: background 0.15s ease;
+}
+
+#confirm-media-btn:hover {
+    background-color: #059669 !important;
+}
+
+.modal-content .btn-danger {
+    flex: 1;
 }
 
 .btn-cancel {
     background: transparent;
     border: none;
     color: #6b7280;
-    margin-top: 5px;
+    margin-top: 6px;
     cursor: pointer;
-    padding: 10px;
+    padding: 8px;
     font-weight: 500;
+    font-size: 0.9rem;
+    transition: color 0.15s ease;
+}
+
+.btn-cancel:hover {
+    color: #111827;
 }
 
 /* Modals Dark Mode */
