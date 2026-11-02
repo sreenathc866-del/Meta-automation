@@ -250,13 +250,23 @@ async function createAdCreative(adAccountId, {
     }
   };
 
-  if (instagramActorId) {
-    payload.object_story_spec.instagram_actor_id = instagramActorId;
+  let response;
+  try {
+    response = await axios.post(`${GRAPH_BASE_URL}/${cleanAccountId}/adcreatives`, payload, {
+      params: { access_token: token }
+    });
+  } catch (err) {
+    // If Meta rejects instagram_actor_id (IG actor ID vs Graph IG User ID mismatch), fallback to Page-only creative
+    if (payload.object_story_spec.instagram_actor_id && (err.response?.data?.error?.message?.includes('instagram_actor_id') || err.response?.data?.error?.error_subcode === 1359000)) {
+      console.warn('[Meta Ads] instagram_actor_id rejected by Meta. Retrying creative with Facebook Page identity...');
+      delete payload.object_story_spec.instagram_actor_id;
+      response = await axios.post(`${GRAPH_BASE_URL}/${cleanAccountId}/adcreatives`, payload, {
+        params: { access_token: token }
+      });
+    } else {
+      throw err;
+    }
   }
-
-  const response = await axios.post(`${GRAPH_BASE_URL}/${cleanAccountId}/adcreatives`, payload, {
-    params: { access_token: token }
-  });
 
   return response.data;
 }
