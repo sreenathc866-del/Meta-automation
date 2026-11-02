@@ -940,19 +940,19 @@ function renderCampaignsTable() {
         actionBtns += `<button onclick="viewCampaignInsights('${c.id}')" style="background: transparent; color: #3b82f6; border: 1px solid #3b82f6; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">Insights</button>`;
 
         tr.innerHTML = `
-            <td style="padding: 14px 18px; font-weight: 600; border-right: 1px solid var(--border-color);">
-                <div style="color: var(--text-primary); font-size: 0.95rem;">${c.name}</div>
-                <div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: normal; margin-top: 2px;">ID: ${c.meta_campaign_id || c.id}</div>
+            <td style="padding: 12px 16px; font-weight: 600; border-right: 1px solid var(--border-color); vertical-align: middle;">
+                <div style="color: var(--text-primary); font-size: 0.95rem; line-height: 1.25; word-break: break-word;">${c.name}</div>
+                <div style="font-size: 0.73rem; color: var(--text-secondary); font-weight: normal; margin-top: 3px; word-break: break-all;">ID: ${c.meta_campaign_id || c.id}</div>
             </td>
-            <td style="padding: 14px 18px; border-right: 1px solid var(--border-color);">
-                <span style="font-size: 0.85rem; background: var(--table-header-bg); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color);">${c.destinationType || 'WHATSAPP'}</span>
+            <td style="padding: 12px 16px; border-right: 1px solid var(--border-color); vertical-align: middle;">
+                <span style="font-size: 0.8rem; background: var(--table-header-bg); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); display: inline-block; font-weight: 600;">${c.destinationType || 'WHATSAPP'}</span>
             </td>
-            <td style="padding: 14px 18px; font-weight: 700; border-right: 1px solid var(--border-color); color: var(--text-primary);">₹${c.dailyBudget || '500'}/day</td>
-            <td style="padding: 14px 18px; border-right: 1px solid var(--border-color);">${approvedBadge}</td>
-            <td style="padding: 14px 18px; border-right: 1px solid var(--border-color);">
+            <td style="padding: 12px 16px; font-weight: 700; border-right: 1px solid var(--border-color); color: var(--text-primary); vertical-align: middle; white-space: nowrap;">₹${c.dailyBudget || '500'}/day</td>
+            <td style="padding: 12px 16px; border-right: 1px solid var(--border-color); vertical-align: middle;">${approvedBadge}</td>
+            <td style="padding: 12px 16px; border-right: 1px solid var(--border-color); vertical-align: middle; white-space: nowrap;">
                 <span style="color: ${statusColor}; font-weight: 700; font-size: 0.85rem;">● ${c.status}</span>
             </td>
-            <td style="padding: 14px 18px; text-align: right;">
+            <td style="padding: 12px 16px; text-align: right; vertical-align: middle; white-space: nowrap;">
                 ${actionBtns}
             </td>
         `;

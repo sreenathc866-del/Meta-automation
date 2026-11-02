@@ -416,7 +416,17 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
   const isGreeting = /^(hello|hi|hey|good morning|good afternoon|good evening|good night)$/i.test(cleanMessage);
 
   if (isGreeting) {
-    const instantReply = `Hi ${customerName ? customerName.trim() : 'there'}! 👋 Welcome to OQULIX. How can I help you out today?`;
+    // Strip emojis and check if the name is an actual human name (not just emoji, phone digits, or generic 'user')
+    const strippedName = (customerName || '')
+      .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{2300}-\u{23FF}]/gu, '')
+      .trim();
+
+    const isActualName = strippedName && 
+      !/^(unknown|customer|user|whatsapp customer)$/i.test(strippedName) && 
+      !/^\+?\d{6,15}$/.test(strippedName);
+
+    const displayName = isActualName ? strippedName : 'there';
+    const instantReply = `Hi ${displayName}! 👋 Welcome to OQULIX. How can I help you out today?`;
     const wamid = await sendWhatsAppMessage(phoneNumber, instantReply);
     
     if (lead) {
