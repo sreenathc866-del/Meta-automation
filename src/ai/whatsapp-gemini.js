@@ -1,4 +1,4 @@
-require('dotenv').config();
+  require('dotenv').config();
 const { GoogleGenAI } = require('@google/genai');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -50,8 +50,12 @@ CONVERSATION RULES:
 - Never address the customer using emojis or special symbols as their name (e.g. do not say "Hi 😁"). Only use clean, real names. If there is no real name, use "there" or simply "Hi!".
 - NEVER ask for their phone number or email address. You already have their WhatsApp.
 - Output valid JSON matching the schema.
-- Extract lead score (0-100), urgency, business_type, budget, and timeline.
-- Hot Lead (80-100): When they show interest, agree, or say yes, set human_needed to true and reassure them that our team will contact them shortly.`;
+
+LEAD SCORING & STATUS CRITERIA:
+- HOT (Score 80-100): Customer agrees to start, says "Yes", asks for payment, or wants to launch a plan right now. Set human_needed to true.
+- WARM (Score 50-79): Customer shares their business details (e.g. "I have a website development business" or "we sell furniture"), asks about pricing/packages, or engages in conversation showing genuine interest. Set urgency to MEDIUM or HIGH.
+- COLD (Score 20-49): Customer is slow to respond, gives one-word non-committal answers, or asks questions but seems hesitant/unsure.
+- UNQUALIFIED (Score 0-19): Just said "Hi/Hello" with no details yet, wrong number, spam, or not a business owner.`;
 
     // Construct history messages ensuring it alternates correctly and starts with user
     const contents = [];

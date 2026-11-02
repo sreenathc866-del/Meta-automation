@@ -640,7 +640,7 @@ body.dark-mode .chat-window::-webkit-scrollbar-thumb {
 
 .campaigns-table {
     width: 100%;
-    min-width: 700px;
+    min-width: 920px;
     border-collapse: collapse;
 }
 
