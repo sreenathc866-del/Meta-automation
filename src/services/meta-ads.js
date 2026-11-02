@@ -158,7 +158,8 @@ async function createAdSet(adAccountId, {
   targeting,
   startTime,
   endTime,
-  destinationType = 'WHATSAPP' // 'WHATSAPP', 'LEAD_GENERATION', 'WEBSITE'
+  destinationType = 'WHATSAPP', // 'WHATSAPP', 'LEAD_GENERATION', 'WEBSITE'
+  pageId
 }) {
   const token = getMetaAccessToken();
   const cleanAccountId = adAccountId.startsWith('act_') ? adAccountId : `act_${adAccountId}`;
