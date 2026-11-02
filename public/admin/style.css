@@ -617,7 +617,7 @@ body.dark-mode .chat-window::-webkit-scrollbar-thumb {
     }
 
     .campaigns-table {
-        min-width: 650px;
+        min-width: 820px !important;
     }
 }
 
@@ -628,14 +628,21 @@ body.dark-mode .chat-window::-webkit-scrollbar-thumb {
     }
 
     .campaigns-table {
-        min-width: 700px;
+        min-width: 860px !important;
     }
+}
+
+#ads-panel {
+    padding-bottom: 5rem !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
 }
 
 .campaigns-table-wrapper {
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
 }
 
 .campaigns-table {
