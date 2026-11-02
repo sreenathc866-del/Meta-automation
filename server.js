@@ -141,6 +141,38 @@ const { getLeadDetails } = require('./src/services/meta-ads');
 // Mount Meta Ads Integration API
 app.use('/api/ads', adsRouter);
 
+// Public Privacy Policy & Terms of Service for Meta Developer App Review
+app.get('/privacy', (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html>
+<head><title>Privacy Policy - OQULIX</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.6;color:#333}h1{color:#111}h2{color:#333;margin-top:30px}</style></head>
+<body>
+<h1>Privacy Policy</h1>
+<p>Last updated: November 2026</p>
+<p>At OQULIX, we are committed to protecting your privacy. This Privacy Policy explains how our marketing and customer communication systems collect, use, and protect your information.</p>
+<h2>1. Information We Collect</h2>
+<p>When you contact us via WhatsApp or submit a form through our advertising campaigns, we collect: your name, contact phone number, and any inquiries regarding our products and services.</p>
+<h2>2. How We Use Information</h2>
+<p>We use the collected information solely to respond to your inquiries, provide customer support, and manage advertising campaigns authorized by you.</p>
+<h2>3. Data Protection & Security</h2>
+<p>We do not sell, rent, or trade your personal information with third parties. All communication data is stored securely in encrypted cloud infrastructure.</p>
+<h2>4. Contact Us</h2>
+<p>For any questions regarding this Privacy Policy or your personal data, please contact our administrative team at support@oqulix.com.</p>
+</body>
+</html>`);
+});
+
+app.get('/terms', (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html>
+<head><title>Terms of Service - OQULIX</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.6;color:#333}h1{color:#111}</style></head>
+<body>
+<h1>Terms of Service</h1>
+<p>By using our services and communicating through our platforms, you agree to comply with and be bound by standard terms of use.</p>
+</body>
+</html>`);
+});
+
 // 1. Webhook Verification (Meta WhatsApp & Leads requirement)
 function verifyWebhook(req, res) {
   const verify_token = process.env.WHATSAPP_VERIFY_TOKEN || process.env.META_WEBHOOK_VERIFY_TOKEN || 'oqulix_secure_token';
