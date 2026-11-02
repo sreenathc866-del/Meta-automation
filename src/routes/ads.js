@@ -267,14 +267,14 @@ router.post('/campaigns/:id/publish', async (req, res) => {
     let destinationType = destination;
 
     if (destination === 'WHATSAPP') {
-      // In Meta API, direct WhatsApp click ads use OUTCOME_TRAFFIC with LINK_CLICKS
-      // to route users straight to wa.me without requiring Page WABA verification
-      metaObjective = 'OUTCOME_TRAFFIC';
-      optimizationGoal = 'LINK_CLICKS';
-      destinationType = 'WEBSITE';
+      // Native WhatsApp Message Engagement Campaign (Click-to-WhatsApp Engagement)
+      metaObjective = 'OUTCOME_ENGAGEMENT';
+      optimizationGoal = 'CONVERSATIONS';
+      destinationType = 'WHATSAPP';
     } else if (destination === 'WEBSITE') {
       metaObjective = 'OUTCOME_TRAFFIC';
       optimizationGoal = 'LINK_CLICKS';
+      destinationType = 'WEBSITE';
     } else if (destination === 'ENGAGEMENT') {
       metaObjective = 'OUTCOME_ENGAGEMENT';
       optimizationGoal = 'POST_ENGAGEMENT';
@@ -297,6 +297,7 @@ router.post('/campaigns/:id/publish', async (req, res) => {
       optimizationGoal: optimizationGoal,
       targeting: c.targeting,
       destinationType: destinationType,
+      pageId: c.pageId,
       startTime: c.startTime || undefined,
       endTime: c.endTime || undefined
     });

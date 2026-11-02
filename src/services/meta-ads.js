@@ -184,6 +184,9 @@ async function createAdSet(adAccountId, {
 
   if (destinationType === 'WHATSAPP') {
     payload.destination_type = 'WHATSAPP';
+    if (pageId) {
+      payload.promoted_object = { page_id: pageId };
+    }
   }
 
   const response = await axios.post(`${GRAPH_BASE_URL}/${cleanAccountId}/adsets`, payload, {
