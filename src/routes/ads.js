@@ -260,10 +260,31 @@ router.post('/campaigns/:id/publish', async (req, res) => {
       return res.status(400).json({ error: 'Ad Account ID and Facebook Page ID are required to publish.' });
     }
 
+    // Step 1: Determine Meta Objective & Optimization Goal based on Destination
+    const destination = c.destinationType || 'WHATSAPP';
+    let metaObjective = c.objective || 'OUTCOME_LEADS';
+    let optimizationGoal = 'LEAD_GENERATION';
+    let destinationType = destination;
+
+    if (destination === 'WHATSAPP') {
+      // In Meta API, direct WhatsApp click ads use OUTCOME_TRAFFIC with LINK_CLICKS
+      // to route users straight to wa.me without requiring Page WABA verification
+      metaObjective = 'OUTCOME_TRAFFIC';
+      optimizationGoal = 'LINK_CLICKS';
+      destinationType = 'WEBSITE';
+    } else if (destination === 'WEBSITE') {
+      metaObjective = 'OUTCOME_TRAFFIC';
+      optimizationGoal = 'LINK_CLICKS';
+    } else if (destination === 'ENGAGEMENT') {
+      metaObjective = 'OUTCOME_ENGAGEMENT';
+      optimizationGoal = 'POST_ENGAGEMENT';
+      destinationType = 'UNDEFINED';
+    }
+
     // Step 1: Create Meta Campaign
     const metaCamp = await metaAdsService.createCampaign(c.adAccountId, {
       name: c.name,
-      objective: c.objective || 'OUTCOME_LEADS',
+      objective: metaObjective,
       status: 'PAUSED'
     });
 
@@ -273,8 +294,9 @@ router.post('/campaigns/:id/publish', async (req, res) => {
       campaignId: metaCamp.id,
       name: `${c.name} - AdSet`,
       dailyBudgetInCents: dailyBudgetCents,
+      optimizationGoal: optimizationGoal,
       targeting: c.targeting,
-      destinationType: c.destinationType || 'WHATSAPP',
+      destinationType: destinationType,
       startTime: c.startTime || undefined,
       endTime: c.endTime || undefined
     });
