@@ -218,6 +218,16 @@ router.put('/campaigns/:id', async (req, res) => {
   }
 });
 
+router.delete('/campaigns/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.collection('ad_campaigns').doc(id).delete();
+    res.json({ success: true, message: 'Campaign draft deleted successfully.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /**
  * 6. Explicit Campaign Manual Approval
  */

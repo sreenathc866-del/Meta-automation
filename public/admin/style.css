@@ -69,7 +69,8 @@ body {
 
 .dashboard {
     display: flex;
-    flex: 1;
+    flex: 1 1 0%;
+    min-height: 0;
     overflow: hidden;
 }
 
@@ -151,6 +152,7 @@ body {
     flex: 1 1 0%;
     width: 100%;
     min-width: 0;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     background: #f9fafb;
@@ -633,9 +635,71 @@ body.dark-mode .chat-window::-webkit-scrollbar-thumb {
 }
 
 #ads-panel {
-    padding-bottom: 5rem !important;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    height: 100% !important;
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
+    padding: 1rem 1.25rem 4rem 1.25rem !important;
+}
+
+.ads-header-card {
+    padding: 0.9rem 1.25rem !important;
+    margin-bottom: 0.85rem !important;
+}
+
+.ads-accounts-bar {
+    padding: 0.85rem 1.25rem !important;
+    margin-bottom: 0.85rem !important;
+}
+
+.ads-metrics-grid {
+    gap: 0.75rem !important;
+    margin-bottom: 0.85rem !important;
+}
+
+.ads-metrics-grid > div {
+    padding: 0.75rem 0.85rem !important;
+}
+
+.ads-metrics-grid div[id^="metric-"] {
+    font-size: 1.35rem !important;
+    margin-top: 4px !important;
+}
+
+/* Campaigns Tabs Bar */
+.campaigns-tabs-bar {
+    display: flex;
+    gap: 6px;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 1.25rem;
+    background: var(--bg-surface);
+}
+
+.campaigns-tab-btn {
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.campaigns-tab-btn:hover {
+    color: var(--text-primary);
+}
+
+.campaigns-tab-btn.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+    font-weight: 700;
 }
 
 .campaigns-table-wrapper {
@@ -643,6 +707,7 @@ body.dark-mode .chat-window::-webkit-scrollbar-thumb {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 8px;
+    min-height: 200px;
 }
 
 .campaigns-table {
@@ -667,6 +732,52 @@ body.dark-mode .chat-window::-webkit-scrollbar-thumb {
 .campaigns-table td {
     display: table-cell !important;
     vertical-align: middle !important;
+}
+
+.campaign-draft-badge {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.campaign-live-badge {
+    background: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.campaign-row-draft {
+    background-color: rgba(254, 243, 199, 0.22) !important;
+}
+
+.campaign-row-draft:hover {
+    background-color: rgba(254, 243, 199, 0.45) !important;
+}
+
+body.dark-mode .campaign-row-draft {
+    background-color: rgba(180, 83, 9, 0.15) !important;
+}
+
+body.dark-mode .campaign-row-draft:hover {
+    background-color: rgba(180, 83, 9, 0.25) !important;
 }
 
 /* --- Dark Mode Styles --- */

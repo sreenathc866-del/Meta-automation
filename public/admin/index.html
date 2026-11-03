@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OQULIX - Lead Management Dashboard</title>
-    <link rel="stylesheet" href="style.css?v=18">
+    <link rel="stylesheet" href="style.css?v=23">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Leaflet CSS & JS for Interactive Audience Radius Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -209,90 +209,107 @@
         </section>
 
         <!-- Meta Ads Dashboard Panel -->
-        <section class="detail-panel" id="ads-panel" style="display: none; padding: 1.5rem; background: var(--bg-primary); flex-direction: column; overflow-y: auto; height: 100%;">
+        <section class="detail-panel" id="ads-panel" style="display: none; background: var(--bg-primary); flex-direction: column; overflow-y: auto; height: 100%; min-height: 0;">
             <!-- Ads Panel Header -->
-            <div class="ads-header-card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.25rem 1.5rem; gap: 1rem;">
+            <div class="ads-header-card" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 0.9rem 1.25rem; gap: 1rem;">
                 <div style="flex: 1; min-width: 0;">
-                    <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; word-break: break-word;">🎯 Meta Ads Manager</h2>
-                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0;">Facebook & Instagram campaigns, Click-to-WhatsApp, and instant lead tracking.</p>
+                    <h2 style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; word-break: break-word;">🎯 Meta Ads Manager</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.82rem; margin: 0;">Facebook & Instagram campaigns, Click-to-WhatsApp, and instant lead tracking.</p>
                 </div>
                 <div class="ads-header-actions" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                    <button onclick="openNewCampaignModal()" class="primary-btn" style="background: #2563eb; font-weight: 600; padding: 8px 14px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); width: auto; font-size: 0.85rem; white-space: nowrap;">✨ Create Campaign</button>
-                    <button onclick="fetchAdCampaigns()" class="refresh-btn" style="padding: 8px 12px; border: 1px solid var(--border-card); background: var(--bg-surface); border-radius: 6px; font-weight: 600; font-size: 0.85rem; white-space: nowrap;">🔄 Refresh</button>
+                    <button onclick="openNewCampaignModal()" class="primary-btn" style="background: #2563eb; font-weight: 600; padding: 7px 14px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); width: auto; font-size: 0.85rem; white-space: nowrap;">✨ Create Campaign</button>
+                    <button onclick="fetchAdCampaigns()" class="refresh-btn" style="padding: 7px 12px; border: 1px solid var(--border-card); background: var(--bg-surface); border-radius: 6px; font-weight: 600; font-size: 0.85rem; white-space: nowrap;">🔄 Refresh</button>
                     <button onclick="hideAdsPanel()" style="background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 1.3rem; padding: 4px 6px;">✖</button>
                 </div>
             </div>
 
             <!-- Connected Accounts Summary -->
-            <div id="ads-accounts-bar" class="ads-accounts-bar" style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div id="ads-accounts-bar" class="ads-accounts-bar" style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 0.85rem 1.25rem; margin-bottom: 0.85rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                 <div class="ads-accounts-info" style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
                     <div class="account-item">
-                        <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.5px;">Ad Account</span>
-                        <div id="connected-ad-account" style="font-weight: 700; font-size: 0.95rem; margin-top: 3px; color: var(--text-primary);">Loading Ad Accounts...</div>
+                        <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.5px;">Ad Account</span>
+                        <div id="connected-ad-account" style="font-weight: 700; font-size: 0.92rem; margin-top: 2px; color: var(--text-primary);">Loading Ad Accounts...</div>
                     </div>
                     <div class="account-item">
-                        <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.5px;">Facebook Page</span>
-                        <div id="connected-page" style="font-weight: 700; font-size: 0.95rem; margin-top: 3px; color: var(--text-primary);">Loading Pages...</div>
+                        <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.5px;">Facebook Page</span>
+                        <div id="connected-page" style="font-weight: 700; font-size: 0.92rem; margin-top: 2px; color: var(--text-primary);">Loading Pages...</div>
                     </div>
                     <div class="account-item">
-                        <span style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.5px;">Instagram Account</span>
-                        <div id="connected-instagram" style="font-weight: 700; font-size: 0.95rem; margin-top: 3px; color: var(--text-primary);">-</div>
+                        <span style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 0.5px;">Instagram Account</span>
+                        <div id="connected-instagram" style="font-weight: 700; font-size: 0.92rem; margin-top: 2px; color: var(--text-primary);">-</div>
                     </div>
                 </div>
                 <div>
-                    <span id="whatsapp-status-badge" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">WhatsApp: Active</span>
+                    <span id="whatsapp-status-badge" style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600;">WhatsApp: Active</span>
                 </div>
             </div>
 
             <!-- Performance Overview Cards (5 Clean Stats) -->
-            <div class="ads-metrics-grid" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-                <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.1rem 1rem; border-left: 4px solid #3b82f6;">
-                    <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Active Campaigns</div>
-                    <div id="metric-active-campaigns" style="font-size: 1.6rem; font-weight: 800; margin-top: 6px; color: var(--text-primary);">0</div>
+            <div class="ads-metrics-grid" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.75rem; margin-bottom: 0.85rem;">
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 0.75rem 0.85rem; border-left: 4px solid #3b82f6;">
+                    <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Active Campaigns</div>
+                    <div id="metric-active-campaigns" style="font-size: 1.35rem; font-weight: 800; margin-top: 4px; color: var(--text-primary);">0</div>
                 </div>
-                <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.1rem 1rem; border-left: 4px solid #10b981;">
-                    <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Attributed Leads</div>
-                    <div id="metric-attributed-leads" style="font-size: 1.6rem; font-weight: 800; margin-top: 6px; color: #10b981;">0</div>
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 0.75rem 0.85rem; border-left: 4px solid #10b981;">
+                    <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Attributed Leads</div>
+                    <div id="metric-attributed-leads" style="font-size: 1.35rem; font-weight: 800; margin-top: 4px; color: #10b981;">0</div>
                 </div>
-                <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.1rem 1rem; border-left: 4px solid #8b5cf6;">
-                    <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Total Impressions</div>
-                    <div id="metric-total-impressions" style="font-size: 1.6rem; font-weight: 800; margin-top: 6px; color: #8b5cf6;">0</div>
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 0.75rem 0.85rem; border-left: 4px solid #8b5cf6;">
+                    <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Total Impressions</div>
+                    <div id="metric-total-impressions" style="font-size: 1.35rem; font-weight: 800; margin-top: 4px; color: #8b5cf6;">0</div>
                 </div>
-                <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.1rem 1rem; border-left: 4px solid #f59e0b;">
-                    <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Total Spent</div>
-                    <div id="metric-total-spend" style="font-size: 1.6rem; font-weight: 800; margin-top: 6px; color: #f59e0b;">₹0.00</div>
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 0.75rem 0.85rem; border-left: 4px solid #f59e0b;">
+                    <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Total Spent</div>
+                    <div id="metric-total-spend" style="font-size: 1.35rem; font-weight: 800; margin-top: 4px; color: #f59e0b;">₹0.00</div>
                 </div>
-                <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 1.1rem 1rem; border-left: 4px solid #06b6d4;">
+                <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; padding: 0.75rem 0.85rem; border-left: 4px solid #06b6d4;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px;">Available Funds</span>
-                        <a id="top-up-billing-btn" href="https://business.facebook.com/latest/billing_hub/accounts?business_id=237173455626416&payment_account_id=1449555234050481&asset_id=1449555234050481" target="_blank" style="font-size: 0.7rem; color: #0284c7; text-decoration: none; font-weight: 700;" title="Open Meta Billing & Add Funds">Top Up / Add Funds ↗</a>
+                        <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px;">Available Funds</span>
+                        <a id="top-up-billing-btn" href="https://business.facebook.com/latest/billing_hub/accounts?business_id=237173455626416&payment_account_id=1449555234050481&asset_id=1449555234050481" target="_blank" style="font-size: 0.68rem; color: #0284c7; text-decoration: none; font-weight: 700;" title="Open Meta Billing & Add Funds">Top Up ↗</a>
                     </div>
-                    <div id="metric-account-balance" style="font-size: 1.6rem; font-weight: 800; margin-top: 6px; color: #0891b2;">₹0.00</div>
+                    <div id="metric-account-balance" style="font-size: 1.35rem; font-weight: 800; margin-top: 4px; color: #0891b2;">₹0.00</div>
                 </div>
             </div>
 
-            <!-- Campaigns Table -->
+            <!-- Campaigns Table Card -->
             <div style="background: var(--bg-surface); border: 1px solid var(--border-card); box-shadow: var(--card-shadow); border-radius: 10px; overflow: hidden; margin-bottom: 2rem;">
-                <div style="padding: 1.1rem 1.25rem; border-bottom: 2px solid var(--border-color); font-weight: 700; font-size: 1.05rem; display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface);">
+                <!-- Header with Action Bar -->
+                <div style="padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border-color); font-weight: 700; font-size: 1.05rem; display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface); flex-wrap: wrap; gap: 8px;">
                     <span style="color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-                        <span>📊</span> All Advertising Campaigns
-                        <span id="campaigns-count-badge" style="font-size: 0.75rem; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 12px; font-weight: 700; margin-left: 4px;">Loading...</span>
+                        <span>📊</span> Advertising Campaigns
+                        <span id="campaigns-count-badge" style="font-size: 0.75rem; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 12px; font-weight: 700;">Loading...</span>
                     </span>
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <button onclick="fetchAdCampaigns()" style="background: none; border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; font-size: 0.75rem; color: var(--text-secondary); cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🔄 Reload Table</button>
-                        <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); background: var(--table-header-bg); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-color);">Status, Manual Approval & Actions</span>
+                        <button onclick="fetchAdCampaigns()" style="background: none; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 10px; font-size: 0.78rem; color: var(--text-secondary); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 600;">🔄 Reload Table</button>
                     </div>
                 </div>
-                <div id="campaigns-table-container" class="campaigns-table-wrapper" style="overflow-x: auto; min-height: 120px;">
+
+                <!-- Tab Filters: All / Drafts & Pending / Meta Live -->
+                <div class="campaigns-tabs-bar">
+                    <button id="tab-camp-all" class="campaigns-tab-btn active" onclick="switchCampaignTab('all')">
+                        <span>📁 All Campaigns</span>
+                        <span id="badge-tab-all" style="font-size: 0.72rem; background: var(--table-header-bg); padding: 1px 6px; border-radius: 10px; color: var(--text-secondary);">0</span>
+                    </button>
+                    <button id="tab-camp-drafts" class="campaigns-tab-btn" onclick="switchCampaignTab('drafts')">
+                        <span>📝 Drafts & Needs Approval</span>
+                        <span id="badge-tab-drafts" style="font-size: 0.72rem; background: #fef3c7; color: #b45309; padding: 1px 6px; border-radius: 10px; font-weight: 700;">0</span>
+                    </button>
+                    <button id="tab-camp-live" class="campaigns-tab-btn" onclick="switchCampaignTab('live')">
+                        <span>🌐 Live on Meta</span>
+                        <span id="badge-tab-live" style="font-size: 0.72rem; background: var(--table-header-bg); padding: 1px 6px; border-radius: 10px; color: var(--text-secondary);">0</span>
+                    </button>
+                </div>
+
+                <div id="campaigns-table-container" class="campaigns-table-wrapper">
                     <table class="campaigns-table" style="width: 100%; min-width: 920px; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
                         <thead>
                             <tr style="background: var(--table-header-bg); border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                                <th style="width: 25%; padding: 12px 14px; border-right: 1px solid var(--border-color); vertical-align: middle;">Campaign Name</th>
-                                <th style="width: 16%; padding: 12px 14px; border-right: 1px solid var(--border-color); vertical-align: middle;">Objective & Destination</th>
-                                <th style="width: 13%; padding: 12px 14px; border-right: 1px solid var(--border-color); vertical-align: middle;">Daily Budget</th>
-                                <th style="width: 13%; padding: 12px 14px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center;">Approval</th>
-                                <th style="width: 11%; padding: 12px 14px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center;">Status</th>
-                                <th style="width: 22%; padding: 12px 16px; text-align: right; vertical-align: middle;">Actions</th>
+                                <th style="width: 32%; padding: 10px 14px; border-right: 1px solid var(--border-color); vertical-align: middle;">Campaign & Creative</th>
+                                <th style="width: 14%; padding: 10px 14px; border-right: 1px solid var(--border-color); vertical-align: middle;">Objective</th>
+                                <th style="width: 12%; padding: 10px 14px; border-right: 1px solid var(--border-color); vertical-align: middle;">Daily Budget</th>
+                                <th style="width: 14%; padding: 10px 14px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center;">Approval</th>
+                                <th style="width: 10%; padding: 10px 14px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center;">Status</th>
+                                <th style="width: 18%; padding: 10px 14px; text-align: right; vertical-align: middle;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="campaigns-table-body">
@@ -743,6 +760,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=21"></script>
+    <script src="app.js?v=23"></script>
 </body>
 </html>

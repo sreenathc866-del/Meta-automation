@@ -890,6 +890,16 @@ async function fetchConnectedAccounts() {
     }
 }
 
+let currentCampaignTab = 'all';
+
+function switchCampaignTab(tab) {
+    currentCampaignTab = tab;
+    document.querySelectorAll('.campaigns-tab-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.getElementById(`tab-camp-${tab}`);
+    if (activeBtn) activeBtn.classList.add('active');
+    renderCampaignsTable();
+}
+
 async function fetchAdCampaigns() {
     const tbody = document.getElementById('campaigns-table-body');
     const badge = document.getElementById('campaigns-count-badge');
@@ -932,46 +942,99 @@ function renderCampaignsTable() {
         return;
     }
 
+    // Sort: Drafts ALWAYS come first (unapproved drafts top priority, then approved drafts, then live campaigns)
+    const sortedCampaigns = [...allCampaignsCache].sort((a, b) => {
+        const isDraftA = String(a.status || '').toUpperCase() === 'DRAFT' || !a.published || a.source !== 'META_LIVE';
+        const isDraftB = String(b.status || '').toUpperCase() === 'DRAFT' || !b.published || b.source !== 'META_LIVE';
+        if (isDraftA && !isDraftB) return -1;
+        if (!isDraftA && isDraftB) return 1;
+        // Among drafts: unapproved first
+        if (isDraftA && isDraftB) {
+            if (!a.approved && b.approved) return -1;
+            if (a.approved && !b.approved) return 1;
+        }
+        return 0;
+    });
+
+    const draftCampaigns = sortedCampaigns.filter(c => String(c.status || '').toUpperCase() === 'DRAFT' || !c.published || c.source !== 'META_LIVE');
+    const liveCampaigns = sortedCampaigns.filter(c => c.source === 'META_LIVE' || (c.published && String(c.status || '').toUpperCase() !== 'DRAFT'));
+
+    // Update tab badges
+    const badgeTabAll = document.getElementById('badge-tab-all');
+    if (badgeTabAll) badgeTabAll.innerText = sortedCampaigns.length;
+    const badgeTabDrafts = document.getElementById('badge-tab-drafts');
+    if (badgeTabDrafts) badgeTabDrafts.innerText = draftCampaigns.length;
+    const badgeTabLive = document.getElementById('badge-tab-live');
+    if (badgeTabLive) badgeTabLive.innerText = liveCampaigns.length;
+
     if (badge) {
-        badge.innerText = `${allCampaignsCache.length} Campaign${allCampaignsCache.length === 1 ? '' : 's'}`;
+        badge.innerText = `${sortedCampaigns.length} Campaign${sortedCampaigns.length === 1 ? '' : 's'}`;
         badge.style.background = '#dbeafe';
         badge.style.color = '#1e40af';
     }
 
+    let campaignsToRender = sortedCampaigns;
+    if (currentCampaignTab === 'drafts') {
+        campaignsToRender = draftCampaigns;
+    } else if (currentCampaignTab === 'live') {
+        campaignsToRender = liveCampaigns;
+    }
+
+    if (campaignsToRender.length === 0) {
+        const emptyMsg = currentCampaignTab === 'drafts'
+            ? 'No draft campaigns right now. Click <strong>✨ Create Campaign</strong> to create a new draft!'
+            : 'No live Meta campaigns found for this account.';
+        tbody.innerHTML = `<tr><td colspan="6" style="padding: 2.5rem; text-align: center; color: var(--text-secondary);">${emptyMsg}</td></tr>`;
+        return;
+    }
+
     let activeCount = 0;
-    allCampaignsCache.forEach((c, idx) => {
+    campaignsToRender.forEach((c, idx) => {
         try {
             if (!c) return;
             const statusUpper = String(c.status || 'DRAFT').toUpperCase();
             if (statusUpper === 'ACTIVE') activeCount++;
 
+            const isDraft = statusUpper === 'DRAFT' || !c.published || c.source !== 'META_LIVE';
+            const isApproved = !!c.approved;
+
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid var(--border-color)';
             tr.style.display = 'table-row';
+            if (isDraft) {
+                tr.className = 'campaign-row-draft';
+            }
 
-            const statusColor = statusUpper === 'ACTIVE' ? '#10b981' : (statusUpper === 'PAUSED' ? '#f59e0b' : '#6b7280');
-            const isApproved = !!c.approved;
-            const approvedBadge = isApproved 
-                ? `<span style="background: #dcfce7; color: #15803d; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">✅ Approved</span>`
-                : `<span style="background: #fee2e2; color: #b91c1c; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">⏳ Needs Approval</span>`;
+            const statusColor = statusUpper === 'ACTIVE' ? '#10b981' : (statusUpper === 'PAUSED' ? '#f59e0b' : '#d97706');
+            
+            let approvedBadge = '';
+            if (isDraft) {
+                approvedBadge = isApproved
+                    ? `<span style="background: #dcfce7; color: #15803d; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; border-radius: 12px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">✅ Approved</span>`
+                    : `<span style="background: #fee2e2; color: #b91c1c; font-size: 0.72rem; font-weight: 700; padding: 4px 8px; border-radius: 12px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">⏳ Needs Approval</span>`;
+            } else {
+                approvedBadge = `<span style="background: #f1f5f9; color: #475569; font-size: 0.72rem; font-weight: 600; padding: 4px 8px; border-radius: 12px; white-space: nowrap;">Live Meta</span>`;
+            }
 
             const campId = String(c.id || c.meta_campaign_id || idx);
             const safeCampId = campId.replace(/'/g, "\\'");
             let actionBtns = '';
 
-            if (!isApproved) {
-                actionBtns += `<button onclick="approveCampaign('${safeCampId}')" style="background: #10b981; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Approve</button>`;
-            } else if (!c.published) {
-                actionBtns += `<button onclick="publishCampaign('${safeCampId}')" style="background: #2563eb; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">🚀 Publish to Meta</button>`;
+            if (isDraft) {
+                if (!isApproved) {
+                    actionBtns += `<button onclick="approveCampaign('${safeCampId}')" style="background: #10b981; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 700; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">✅ Approve</button>`;
+                } else if (!c.published) {
+                    actionBtns += `<button onclick="publishCampaign('${safeCampId}')" style="background: #2563eb; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 700; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🚀 Publish to Meta</button>`;
+                }
+                actionBtns += `<button onclick="deleteCampaignDraft('${safeCampId}')" style="background: transparent; color: #ef4444; border: 1px solid #fca5a5; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.78rem; font-weight: 600; white-space: nowrap;" title="Delete this draft">🗑️ Delete</button>`;
             } else {
                 if (statusUpper === 'ACTIVE') {
                     actionBtns += `<button onclick="toggleCampaignStatus('${safeCampId}', 'PAUSED')" style="background: #f59e0b; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Pause</button>`;
                 } else {
                     actionBtns += `<button onclick="toggleCampaignStatus('${safeCampId}', 'ACTIVE')" style="background: #10b981; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Resume</button>`;
                 }
+                actionBtns += `<button onclick="viewCampaignInsights('${safeCampId}')" style="background: transparent; color: #3b82f6; border: 1px solid #3b82f6; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.78rem; font-weight: 600; white-space: nowrap;">Insights</button>`;
             }
-
-            actionBtns += `<button onclick="viewCampaignInsights('${safeCampId}')" style="background: transparent; color: #3b82f6; border: 1px solid #3b82f6; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Insights</button>`;
 
             const rawBudget = c.dailyBudget !== undefined && c.dailyBudget !== null && c.dailyBudget !== '' ? c.dailyBudget : (c.budget || '500');
             const displayBudget = Number(rawBudget) > 0 ? `₹${rawBudget}/day` : (rawBudget === 0 || rawBudget === '0' ? 'Account Budget' : `₹${rawBudget}/day`);
@@ -979,21 +1042,45 @@ function renderCampaignsTable() {
             const displayId = c.meta_campaign_id || c.id || 'N/A';
             const displayDest = c.destinationType || 'WHATSAPP';
 
+            const typeBadge = isDraft
+                ? `<span class="campaign-draft-badge">📝 DRAFT</span>`
+                : `<span class="campaign-live-badge">🌐 META LIVE</span>`;
+
+            let creativeSnippet = '';
+            if (c.headline || c.primaryText) {
+                const textPreview = (c.headline || c.primaryText || '').slice(0, 50);
+                creativeSnippet = `<div style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 2px; font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px;">“${textPreview}”</div>`;
+            }
+
+            let imageThumb = '';
+            if (c.imageUrl) {
+                imageThumb = `<img src="${c.imageUrl}" alt="Creative" style="width: 38px; height: 38px; border-radius: 5px; object-fit: cover; border: 1px solid var(--border-color); flex-shrink: 0;" onerror="this.style.display='none'">`;
+            }
+
             tr.innerHTML = `
-                <td style="padding: 12px 14px; font-weight: 600; border-right: 1px solid var(--border-color); vertical-align: middle;">
-                    <div style="color: var(--text-primary); font-size: 0.95rem; line-height: 1.25; word-break: break-word;">${displayName}</div>
-                    <div style="font-size: 0.73rem; color: var(--text-secondary); font-weight: normal; margin-top: 3px; word-break: break-all;">ID: ${displayId}</div>
+                <td style="padding: 10px 14px; font-weight: 600; border-right: 1px solid var(--border-color); vertical-align: middle;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        ${imageThumb}
+                        <div style="min-width: 0;">
+                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                <span style="color: var(--text-primary); font-size: 0.92rem; line-height: 1.25; font-weight: 700;">${displayName}</span>
+                                ${typeBadge}
+                            </div>
+                            ${creativeSnippet}
+                            <div style="font-size: 0.7rem; color: var(--text-secondary); font-weight: normal; margin-top: 2px;">ID: ${displayId}</div>
+                        </div>
+                    </div>
                 </td>
-                <td style="padding: 12px 14px; border-right: 1px solid var(--border-color); vertical-align: middle;">
-                    <span style="font-size: 0.8rem; background: var(--table-header-bg); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); display: inline-block; font-weight: 600;">${displayDest}</span>
+                <td style="padding: 10px 14px; border-right: 1px solid var(--border-color); vertical-align: middle;">
+                    <span style="font-size: 0.78rem; background: var(--table-header-bg); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-color); display: inline-block; font-weight: 600;">${displayDest}</span>
                 </td>
-                <td style="padding: 12px 14px; font-weight: 700; border-right: 1px solid var(--border-color); color: var(--text-primary); vertical-align: middle; white-space: nowrap;">${displayBudget}</td>
-                <td style="padding: 12px 14px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center; white-space: nowrap;">${approvedBadge}</td>
-                <td style="padding: 12px 14px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center; white-space: nowrap;">
-                    <span style="color: ${statusColor}; font-weight: 700; font-size: 0.85rem;">● ${statusUpper}</span>
+                <td style="padding: 10px 14px; font-weight: 700; border-right: 1px solid var(--border-color); color: var(--text-primary); vertical-align: middle; white-space: nowrap; font-size: 0.88rem;">${displayBudget}</td>
+                <td style="padding: 10px 14px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center; white-space: nowrap;">${approvedBadge}</td>
+                <td style="padding: 10px 14px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center; white-space: nowrap;">
+                    <span style="color: ${statusColor}; font-weight: 700; font-size: 0.82rem;">● ${statusUpper}</span>
                 </td>
-                <td style="padding: 12px 16px; text-align: right; vertical-align: middle; white-space: nowrap;">
-                    <div style="display: inline-flex; gap: 8px; align-items: center; justify-content: flex-end;">${actionBtns}</div>
+                <td style="padding: 10px 14px; text-align: right; vertical-align: middle; white-space: nowrap;">
+                    <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end;">${actionBtns}</div>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -1697,6 +1784,22 @@ async function viewCampaignInsights(id) {
         }
     } catch (err) {
         alert('Error: ' + err.message);
+    }
+}
+
+async function deleteCampaignDraft(id) {
+    if (!confirm('Are you sure you want to delete this draft campaign? This cannot be undone.')) return;
+    try {
+        const res = await fetch(`/api/ads/campaigns/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            alert('Campaign draft deleted successfully.');
+            fetchAdCampaigns();
+        } else {
+            alert('Failed to delete draft: ' + (data.error || 'Unknown error'));
+        }
+    } catch (e) {
+        alert('Failed to delete draft: ' + e.message);
     }
 }
 
