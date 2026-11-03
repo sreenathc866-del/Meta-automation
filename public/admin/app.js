@@ -209,10 +209,10 @@ function switchMainPanel(panelName) {
     const bulkPanel = document.getElementById('bulk-panel');
     const adsPanel = document.getElementById('ads-panel');
 
-    if (detailPanel) detailPanel.style.display = (panelName === 'detail') ? 'flex' : 'none';
-    if (emptyState) emptyState.style.display = (panelName === 'empty') ? 'flex' : 'none';
-    if (bulkPanel) bulkPanel.style.display = (panelName === 'bulk') ? 'flex' : 'none';
-    if (adsPanel) adsPanel.style.display = (panelName === 'ads') ? 'flex' : 'none';
+    if (detailPanel) detailPanel.style.setProperty('display', panelName === 'detail' ? 'flex' : 'none', 'important');
+    if (emptyState) emptyState.style.setProperty('display', panelName === 'empty' ? 'flex' : 'none', 'important');
+    if (bulkPanel) bulkPanel.style.setProperty('display', panelName === 'bulk' ? 'flex' : 'none', 'important');
+    if (adsPanel) adsPanel.style.setProperty('display', panelName === 'ads' ? 'flex' : 'none', 'important');
 }
 
 function renderConversationMessages(messages) {
@@ -787,7 +787,10 @@ let uploadedAdImageHash = '';
 
 function toggleAdsPanel() {
     const adsPanel = document.getElementById('ads-panel');
-    if (adsPanel && adsPanel.style.display === 'flex') {
+    if (!adsPanel) return;
+    const isVisible = adsPanel.style.display === 'flex' || 
+                      (window.getComputedStyle(adsPanel).display !== 'none' && adsPanel.style.display !== 'none');
+    if (isVisible) {
         hideAdsPanel();
     } else {
         showAdsPanel();
@@ -1022,16 +1025,16 @@ function renderCampaignsTable() {
 
             if (isDraft) {
                 if (!isApproved) {
-                    actionBtns += `<button onclick="approveCampaign('${safeCampId}')" style="background: #10b981; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 700; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">✅ Approve</button>`;
+                    actionBtns += `<button onclick="approveCampaign('${safeCampId}', this)" style="background: #10b981; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 700; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">✅ Approve</button>`;
                 } else if (!c.published) {
-                    actionBtns += `<button onclick="publishCampaign('${safeCampId}')" style="background: #2563eb; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 700; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🚀 Publish to Meta</button>`;
+                    actionBtns += `<button onclick="publishCampaign('${safeCampId}', this)" style="background: #2563eb; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 700; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🚀 Publish to Meta</button>`;
                 }
-                actionBtns += `<button onclick="deleteCampaignDraft('${safeCampId}')" style="background: transparent; color: #ef4444; border: 1px solid #fca5a5; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.78rem; font-weight: 600; white-space: nowrap;" title="Delete this draft">🗑️ Delete</button>`;
+                actionBtns += `<button onclick="deleteCampaignDraft('${safeCampId}', this)" style="background: transparent; color: #ef4444; border: 1px solid #fca5a5; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.78rem; font-weight: 600; white-space: nowrap;" title="Delete this draft">🗑️ Delete</button>`;
             } else {
                 if (statusUpper === 'ACTIVE') {
-                    actionBtns += `<button onclick="toggleCampaignStatus('${safeCampId}', 'PAUSED')" style="background: #f59e0b; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Pause</button>`;
+                    actionBtns += `<button onclick="toggleCampaignStatus('${safeCampId}', 'PAUSED', this)" style="background: #f59e0b; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Pause</button>`;
                 } else {
-                    actionBtns += `<button onclick="toggleCampaignStatus('${safeCampId}', 'ACTIVE')" style="background: #10b981; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Resume</button>`;
+                    actionBtns += `<button onclick="toggleCampaignStatus('${safeCampId}', 'ACTIVE', this)" style="background: #10b981; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Resume</button>`;
                 }
                 actionBtns += `<button onclick="viewCampaignInsights('${safeCampId}')" style="background: transparent; color: #3b82f6; border: 1px solid #3b82f6; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.78rem; font-weight: 600; white-space: nowrap;">Insights</button>`;
             }
@@ -1714,62 +1717,126 @@ async function saveCampaignDraft() {
     }
 }
 
-async function approveCampaign(id) {
-    if (!confirm('Are you sure you want to approve this campaign for publishing to Meta?')) return;
+async function approveCampaign(id, btn) {
+    if (!id) return;
+    let shouldProceed = true;
     try {
-        const res = await fetch(`/api/ads/campaigns/${id}/approve`, {
+        if (typeof window.confirm === 'function') {
+            shouldProceed = window.confirm('Are you sure you want to approve this campaign for publishing to Meta?');
+        }
+    } catch (e) {
+        shouldProceed = true;
+    }
+    if (!shouldProceed) return;
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Approving...';
+    }
+
+    try {
+        const safeId = encodeURIComponent(String(id).trim());
+        const res = await fetch(`/api/ads/campaigns/${safeId}/approve`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ approvedBy: 'Admin' })
         });
         const data = await res.json();
         if (data.success) {
-            fetchAdCampaigns();
+            await fetchAdCampaigns();
         } else {
-            alert('Approval failed: ' + data.error);
+            alert('Approval failed: ' + (data.error || 'Server error'));
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = '✅ Approve';
+            }
         }
     } catch (err) {
-        alert(err.message);
+        alert('Approval error: ' + err.message);
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = '✅ Approve';
+        }
     }
 }
 
-async function publishCampaign(id) {
-    if (!confirm('Publish this approved campaign to Meta Marketing API?')) return;
+async function publishCampaign(id, btn) {
+    if (!id) return;
+    let shouldProceed = true;
     try {
-        const res = await fetch(`/api/ads/campaigns/${id}/publish`, { method: 'POST' });
+        if (typeof window.confirm === 'function') {
+            shouldProceed = window.confirm('Publish this approved campaign to Meta Marketing API?');
+        }
+    } catch (e) {
+        shouldProceed = true;
+    }
+    if (!shouldProceed) return;
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Publishing...';
+    }
+
+    try {
+        const safeId = encodeURIComponent(String(id).trim());
+        const res = await fetch(`/api/ads/campaigns/${safeId}/publish`, { method: 'POST' });
         const data = await res.json();
         if (data.success) {
             alert('Campaign published to Meta! Current delivery status is PAUSED until explicitly activated.');
-            fetchAdCampaigns();
+            await fetchAdCampaigns();
         } else {
-            alert('Meta Publish Failed: ' + data.error);
+            alert('Meta Publish Failed: ' + (data.error || 'Unknown error'));
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = '🚀 Publish to Meta';
+            }
         }
     } catch (err) {
-        alert(err.message);
+        alert('Publish error: ' + err.message);
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = '🚀 Publish to Meta';
+        }
     }
 }
 
-async function toggleCampaignStatus(id, newStatus) {
+async function toggleCampaignStatus(id, newStatus, btn) {
+    if (!id) return;
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Updating...';
+    }
     try {
-        const res = await fetch(`/api/ads/campaigns/${id}/status`, {
+        const safeId = encodeURIComponent(String(id).trim());
+        const res = await fetch(`/api/ads/campaigns/${safeId}/status`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: newStatus })
         });
         const data = await res.json();
         if (data.success) {
-            fetchAdCampaigns();
+            await fetchAdCampaigns();
         } else {
-            alert('Status update failed: ' + data.error);
+            alert('Status update failed: ' + (data.error || 'Server error'));
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = newStatus === 'ACTIVE' ? 'Resume' : 'Pause';
+            }
         }
     } catch (err) {
-        alert(err.message);
+        alert('Status error: ' + err.message);
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = newStatus === 'ACTIVE' ? 'Resume' : 'Pause';
+        }
     }
 }
 
 async function viewCampaignInsights(id) {
+    if (!id) return;
     try {
-        const res = await fetch(`/api/ads/campaigns/${id}/insights`);
+        const safeId = encodeURIComponent(String(id).trim());
+        const res = await fetch(`/api/ads/campaigns/${safeId}/insights`);
         const data = await res.json();
         if (data.success) {
             const ins = data.metaInsights;
@@ -1788,21 +1855,63 @@ async function viewCampaignInsights(id) {
     }
 }
 
-async function deleteCampaignDraft(id) {
-    if (!confirm('Are you sure you want to delete this draft campaign? This cannot be undone.')) return;
+async function deleteCampaignDraft(id, btn) {
+    if (!id) return;
+    let shouldProceed = true;
     try {
-        const res = await fetch(`/api/ads/campaigns/${id}`, { method: 'DELETE' });
+        if (typeof window.confirm === 'function') {
+            shouldProceed = window.confirm('Are you sure you want to delete this draft campaign? This cannot be undone.');
+        }
+    } catch (e) {
+        shouldProceed = true;
+    }
+    if (!shouldProceed) return;
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Deleting...';
+    }
+
+    try {
+        const safeId = encodeURIComponent(String(id).trim());
+        const res = await fetch(`/api/ads/campaigns/${safeId}`, { method: 'DELETE' });
         const data = await res.json();
         if (data.success) {
-            alert('Campaign draft deleted successfully.');
-            fetchAdCampaigns();
+            await fetchAdCampaigns();
         } else {
             alert('Failed to delete draft: ' + (data.error || 'Unknown error'));
+            if (btn) {
+                btn.disabled = false;
+                btn.innerText = '🗑️ Delete';
+            }
         }
     } catch (e) {
         alert('Failed to delete draft: ' + e.message);
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = '🗑️ Delete';
+        }
     }
 }
+
+// Explicit Global Window Attachments for inline HTML event handlers
+window.switchMainPanel = switchMainPanel;
+window.toggleAdsPanel = toggleAdsPanel;
+window.showAdsPanel = showAdsPanel;
+window.hideAdsPanel = hideAdsPanel;
+window.switchCampaignTab = switchCampaignTab;
+window.fetchAdCampaigns = fetchAdCampaigns;
+window.fetchConnectedAccounts = fetchConnectedAccounts;
+window.openNewCampaignModal = openNewCampaignModal;
+window.closeCampaignModal = closeCampaignModal;
+window.approveCampaign = approveCampaign;
+window.deleteCampaignDraft = deleteCampaignDraft;
+window.publishCampaign = publishCampaign;
+window.toggleCampaignStatus = toggleCampaignStatus;
+window.viewCampaignInsights = viewCampaignInsights;
+window.toggleAi = toggleAi;
+window.toggleBulkPanel = toggleBulkPanel;
+window.toggleDarkMode = toggleDarkMode;
 
 // Initial load
 fetchLeads();
