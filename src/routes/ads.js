@@ -147,8 +147,9 @@ router.get('/campaigns', async (req, res) => {
   try {
     let storedCampaigns = [];
     try {
-      const snapshot = await db.collection('ad_campaigns').orderBy('created_at', 'desc').get();
+      const snapshot = await db.collection('ad_campaigns').get();
       storedCampaigns = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      storedCampaigns.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
     } catch (dbErr) {
       console.warn('[Ads] Note: Could not fetch campaigns from DB:', dbErr.message);
     }

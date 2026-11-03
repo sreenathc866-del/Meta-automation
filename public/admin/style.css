@@ -635,79 +635,82 @@ body.dark-mode .chat-window::-webkit-scrollbar-thumb {
 }
 
 #ads-panel {
+    display: flex !important;
+    flex-direction: column !important;
     flex: 1 1 0% !important;
     min-height: 0 !important;
     max-height: 100% !important;
     height: 100% !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch;
-    padding: 1rem 1.25rem 4rem 1.25rem !important;
+    overflow: hidden !important;
+    padding: 0.75rem 1rem !important;
 }
 
 .ads-header-card {
-    padding: 0.9rem 1.25rem !important;
-    margin-bottom: 0.85rem !important;
-}
-
-.ads-accounts-bar {
-    padding: 0.85rem 1.25rem !important;
-    margin-bottom: 0.85rem !important;
+    padding: 0.6rem 1rem !important;
+    margin-bottom: 0.5rem !important;
 }
 
 .ads-metrics-grid {
-    gap: 0.75rem !important;
-    margin-bottom: 0.85rem !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
 }
 
 .ads-metrics-grid > div {
-    padding: 0.75rem 0.85rem !important;
+    padding: 0.45rem 0.75rem !important;
 }
 
 .ads-metrics-grid div[id^="metric-"] {
-    font-size: 1.35rem !important;
-    margin-top: 4px !important;
+    font-size: 1.2rem !important;
+    margin-top: 2px !important;
 }
 
 /* Campaigns Tabs Bar */
 .campaigns-tabs-bar {
     display: flex;
-    gap: 6px;
-    border-bottom: 1px solid var(--border-color);
-    padding: 0 1.25rem;
-    background: var(--bg-surface);
+    gap: 4px;
+    background: transparent;
 }
 
 .campaigns-tab-btn {
-    padding: 10px 16px;
-    font-size: 0.85rem;
+    padding: 6px 12px;
+    font-size: 0.78rem;
     font-weight: 600;
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
+    background: var(--table-header-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.15s ease;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
 }
 
 .campaigns-tab-btn:hover {
     color: var(--text-primary);
+    background: var(--border-color);
 }
 
 .campaigns-tab-btn.active {
     color: #2563eb;
-    border-bottom-color: #2563eb;
+    background: #eff6ff;
+    border-color: #93c5fd;
     font-weight: 700;
+}
+
+body.dark-mode .campaigns-tab-btn.active {
+    background: #1e3a8a;
+    color: #93c5fd;
+    border-color: #3b82f6;
 }
 
 .campaigns-table-wrapper {
     width: 100%;
     overflow-x: auto;
+    overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 8px;
-    min-height: 200px;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
 }
 
 .campaigns-table {

@@ -1041,10 +1041,11 @@ function renderCampaignsTable() {
             const displayName = c.name || 'Untitled Campaign';
             const displayId = c.meta_campaign_id || c.id || 'N/A';
             const displayDest = c.destinationType || 'WHATSAPP';
+            const friendlyDest = displayDest === 'OUTCOME_ENGAGEMENT' ? 'Meta Engagement' : (displayDest === 'OUTCOME_LEADS' ? 'Meta Leads' : (displayDest === 'WHATSAPP' ? 'WhatsApp Direct' : displayDest));
 
             const typeBadge = isDraft
-                ? `<span class="campaign-draft-badge">📝 DRAFT</span>`
-                : `<span class="campaign-live-badge">🌐 META LIVE</span>`;
+                ? `<span class="campaign-draft-badge">📝 LOCAL DRAFT</span>`
+                : `<span class="campaign-live-badge" style="background: #f1f5f9; color: #475569; border-color: #cbd5e1;">⏸️ META PAUSED</span>`;
 
             let creativeSnippet = '';
             if (c.headline || c.primaryText) {
@@ -1054,16 +1055,16 @@ function renderCampaignsTable() {
 
             let imageThumb = '';
             if (c.imageUrl) {
-                imageThumb = `<img src="${c.imageUrl}" alt="Creative" style="width: 38px; height: 38px; border-radius: 5px; object-fit: cover; border: 1px solid var(--border-color); flex-shrink: 0;" onerror="this.style.display='none'">`;
+                imageThumb = `<img src="${c.imageUrl}" alt="Creative" style="width: 36px; height: 36px; border-radius: 5px; object-fit: cover; border: 1px solid var(--border-color); flex-shrink: 0;" onerror="this.style.display='none'">`;
             }
 
             tr.innerHTML = `
-                <td style="padding: 10px 14px; font-weight: 600; border-right: 1px solid var(--border-color); vertical-align: middle;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
+                <td style="padding: 8px 12px; font-weight: 600; border-right: 1px solid var(--border-color); vertical-align: middle;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
                         ${imageThumb}
                         <div style="min-width: 0;">
                             <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                <span style="color: var(--text-primary); font-size: 0.92rem; line-height: 1.25; font-weight: 700;">${displayName}</span>
+                                <span style="color: var(--text-primary); font-size: 0.9rem; line-height: 1.25; font-weight: 700;">${displayName}</span>
                                 ${typeBadge}
                             </div>
                             ${creativeSnippet}
@@ -1071,15 +1072,15 @@ function renderCampaignsTable() {
                         </div>
                     </div>
                 </td>
-                <td style="padding: 10px 14px; border-right: 1px solid var(--border-color); vertical-align: middle;">
-                    <span style="font-size: 0.78rem; background: var(--table-header-bg); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-color); display: inline-block; font-weight: 600;">${displayDest}</span>
+                <td style="padding: 8px 12px; border-right: 1px solid var(--border-color); vertical-align: middle;">
+                    <span style="font-size: 0.75rem; background: var(--table-header-bg); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border-color); display: inline-block; font-weight: 600;">${friendlyDest}</span>
                 </td>
-                <td style="padding: 10px 14px; font-weight: 700; border-right: 1px solid var(--border-color); color: var(--text-primary); vertical-align: middle; white-space: nowrap; font-size: 0.88rem;">${displayBudget}</td>
-                <td style="padding: 10px 14px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center; white-space: nowrap;">${approvedBadge}</td>
-                <td style="padding: 10px 14px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center; white-space: nowrap;">
-                    <span style="color: ${statusColor}; font-weight: 700; font-size: 0.82rem;">● ${statusUpper}</span>
+                <td style="padding: 8px 12px; font-weight: 700; border-right: 1px solid var(--border-color); color: var(--text-primary); vertical-align: middle; white-space: nowrap; font-size: 0.85rem;">${displayBudget}</td>
+                <td style="padding: 8px 12px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center; white-space: nowrap;">${approvedBadge}</td>
+                <td style="padding: 8px 12px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center; white-space: nowrap;">
+                    <span style="color: ${statusColor}; font-weight: 700; font-size: 0.8rem;">● ${statusUpper}</span>
                 </td>
-                <td style="padding: 10px 14px; text-align: right; vertical-align: middle; white-space: nowrap;">
+                <td style="padding: 8px 12px; text-align: right; vertical-align: middle; white-space: nowrap;">
                     <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end;">${actionBtns}</div>
                 </td>
             `;
