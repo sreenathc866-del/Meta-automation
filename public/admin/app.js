@@ -891,15 +891,19 @@ async function fetchConnectedAccounts() {
 }
 
 async function fetchAdCampaigns() {
+    const tbody = document.getElementById('campaigns-table-body');
     try {
         const res = await fetch('/api/ads/campaigns');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const campaigns = await res.json();
         allCampaignsCache = Array.isArray(campaigns) ? campaigns : [];
         renderCampaignsTable();
     } catch (err) {
         console.error('Error fetching campaigns:', err);
         allCampaignsCache = [];
-        renderCampaignsTable();
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" style="padding: 2.5rem; text-align: center; color: #ef4444;">Failed to load campaigns: ${err.message}. <button onclick="fetchAdCampaigns()" style="margin-left: 8px; text-decoration: underline; background: none; border: none; color: #3b82f6; cursor: pointer;">Retry</button></td></tr>`;
+        }
     }
 }
 
@@ -908,58 +912,78 @@ function renderCampaignsTable() {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    if (allCampaignsCache.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="padding: 2.5rem; text-align: center; color: var(--text-secondary);">No campaigns yet. Click <strong>✨ Create New Campaign</strong> to build one with AI!</td></tr>`;
+    if (!Array.isArray(allCampaignsCache) || allCampaignsCache.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="padding: 2.5rem; text-align: center; color: var(--text-secondary);">No campaigns yet. Click <strong>✨ Create Campaign</strong> to build one with AI!</td></tr>`;
+        const activeMetric = document.getElementById('metric-active-campaigns');
+        if (activeMetric) activeMetric.innerText = '0';
         return;
     }
 
     let activeCount = 0;
-    allCampaignsCache.forEach(c => {
-        if (c.status === 'ACTIVE') activeCount++;
-        const tr = document.createElement('tr');
-        tr.style.borderBottom = '1px solid var(--border-color)';
+    allCampaignsCache.forEach((c, idx) => {
+        try {
+            if (!c) return;
+            const statusUpper = String(c.status || 'DRAFT').toUpperCase();
+            if (statusUpper === 'ACTIVE') activeCount++;
 
-        const statusColor = c.status === 'ACTIVE' ? '#10b981' : (c.status === 'PAUSED' ? '#f59e0b' : '#6b7280');
-        const approvedBadge = c.approved 
-            ? `<span style="background: #dcfce7; color: #15803d; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">✅ Approved</span>`
-            : `<span style="background: #fee2e2; color: #b91c1c; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">⏳ Needs Approval</span>`;
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid var(--border-color)';
 
-        let actionBtns = '';
-        if (!c.approved) {
-            actionBtns += `<button onclick="approveCampaign('${c.id}')" style="background: #10b981; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Approve</button>`;
-        } else if (!c.published) {
-            actionBtns += `<button onclick="publishCampaign('${c.id}')" style="background: #2563eb; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">🚀 Publish to Meta</button>`;
-        } else {
-            if (c.status === 'ACTIVE') {
-                actionBtns += `<button onclick="toggleCampaignStatus('${c.id}', 'PAUSED')" style="background: #f59e0b; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Pause</button>`;
+            const statusColor = statusUpper === 'ACTIVE' ? '#10b981' : (statusUpper === 'PAUSED' ? '#f59e0b' : '#6b7280');
+            const isApproved = !!c.approved;
+            const approvedBadge = isApproved 
+                ? `<span style="background: #dcfce7; color: #15803d; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">✅ Approved</span>`
+                : `<span style="background: #fee2e2; color: #b91c1c; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">⏳ Needs Approval</span>`;
+
+            const campId = String(c.id || c.meta_campaign_id || idx);
+            const safeCampId = campId.replace(/'/g, "\\'");
+            let actionBtns = '';
+
+            if (!isApproved) {
+                actionBtns += `<button onclick="approveCampaign('${safeCampId}')" style="background: #10b981; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Approve</button>`;
+            } else if (!c.published) {
+                actionBtns += `<button onclick="publishCampaign('${safeCampId}')" style="background: #2563eb; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">🚀 Publish to Meta</button>`;
             } else {
-                actionBtns += `<button onclick="toggleCampaignStatus('${c.id}', 'ACTIVE')" style="background: #10b981; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Resume</button>`;
+                if (statusUpper === 'ACTIVE') {
+                    actionBtns += `<button onclick="toggleCampaignStatus('${safeCampId}', 'PAUSED')" style="background: #f59e0b; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Pause</button>`;
+                } else {
+                    actionBtns += `<button onclick="toggleCampaignStatus('${safeCampId}', 'ACTIVE')" style="background: #10b981; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Resume</button>`;
+                }
             }
+
+            actionBtns += `<button onclick="viewCampaignInsights('${safeCampId}')" style="background: transparent; color: #3b82f6; border: 1px solid #3b82f6; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Insights</button>`;
+
+            const rawBudget = c.dailyBudget !== undefined && c.dailyBudget !== null && c.dailyBudget !== '' ? c.dailyBudget : (c.budget || '500');
+            const displayBudget = Number(rawBudget) > 0 ? `₹${rawBudget}/day` : (rawBudget === 0 || rawBudget === '0' ? 'Account Budget' : `₹${rawBudget}/day`);
+            const displayName = c.name || 'Untitled Campaign';
+            const displayId = c.meta_campaign_id || c.id || 'N/A';
+            const displayDest = c.destinationType || 'WHATSAPP';
+
+            tr.innerHTML = `
+                <td style="padding: 12px 14px; font-weight: 600; border-right: 1px solid var(--border-color); vertical-align: middle;">
+                    <div style="color: var(--text-primary); font-size: 0.95rem; line-height: 1.25; word-break: break-word;">${displayName}</div>
+                    <div style="font-size: 0.73rem; color: var(--text-secondary); font-weight: normal; margin-top: 3px; word-break: break-all;">ID: ${displayId}</div>
+                </td>
+                <td style="padding: 12px 14px; border-right: 1px solid var(--border-color); vertical-align: middle;">
+                    <span style="font-size: 0.8rem; background: var(--table-header-bg); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); display: inline-block; font-weight: 600;">${displayDest}</span>
+                </td>
+                <td style="padding: 12px 14px; font-weight: 700; border-right: 1px solid var(--border-color); color: var(--text-primary); vertical-align: middle; white-space: nowrap;">${displayBudget}</td>
+                <td style="padding: 12px 14px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center; white-space: nowrap;">${approvedBadge}</td>
+                <td style="padding: 12px 14px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center; white-space: nowrap;">
+                    <span style="color: ${statusColor}; font-weight: 700; font-size: 0.85rem;">● ${statusUpper}</span>
+                </td>
+                <td style="padding: 12px 16px; text-align: right; vertical-align: middle; white-space: nowrap;">
+                    <div style="display: inline-flex; gap: 8px; align-items: center; justify-content: flex-end;">${actionBtns}</div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        } catch (rowErr) {
+            console.error('Error rendering row for campaign:', c, rowErr);
         }
-
-        actionBtns += `<button onclick="viewCampaignInsights('${c.id}')" style="background: transparent; color: #3b82f6; border: 1px solid #3b82f6; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 600; white-space: nowrap;">Insights</button>`;
-
-        tr.innerHTML = `
-            <td style="padding: 12px 14px; font-weight: 600; border-right: 1px solid var(--border-color); vertical-align: middle;">
-                <div style="color: var(--text-primary); font-size: 0.95rem; line-height: 1.25; word-break: break-word;">${c.name}</div>
-                <div style="font-size: 0.73rem; color: var(--text-secondary); font-weight: normal; margin-top: 3px; word-break: break-all;">ID: ${c.meta_campaign_id || c.id}</div>
-            </td>
-            <td style="padding: 12px 14px; border-right: 1px solid var(--border-color); vertical-align: middle;">
-                <span style="font-size: 0.8rem; background: var(--table-header-bg); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color); display: inline-block; font-weight: 600;">${c.destinationType || 'WHATSAPP'}</span>
-            </td>
-            <td style="padding: 12px 14px; font-weight: 700; border-right: 1px solid var(--border-color); color: var(--text-primary); vertical-align: middle; white-space: nowrap;">₹${c.dailyBudget || '500'}/day</td>
-            <td style="padding: 12px 14px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center; white-space: nowrap;">${approvedBadge}</td>
-            <td style="padding: 12px 14px; border-right: 1px solid var(--border-color); vertical-align: middle; text-align: center; white-space: nowrap;">
-                <span style="color: ${statusColor}; font-weight: 700; font-size: 0.85rem;">● ${c.status}</span>
-            </td>
-            <td style="padding: 12px 16px; text-align: right; vertical-align: middle; white-space: nowrap;">
-                <div style="display: inline-flex; gap: 8px; align-items: center; justify-content: flex-end;">${actionBtns}</div>
-            </td>
-        `;
-        tbody.appendChild(tr);
     });
 
-    document.getElementById('metric-active-campaigns').innerText = activeCount;
+    const activeMetric = document.getElementById('metric-active-campaigns');
+    if (activeMetric) activeMetric.innerText = activeCount;
 }
 
 let audienceMap = null;
@@ -1658,8 +1682,11 @@ async function viewCampaignInsights(id) {
 
 // Initial load
 fetchLeads();
+fetchConnectedAccounts().catch(e => console.warn('Init account fetch error:', e));
+fetchAdCampaigns().catch(e => console.warn('Init campaign fetch error:', e));
 
 // Automatic Live Sync: Automatically poll every 3 seconds so incoming messages & AI replies show up in real-time
 setInterval(() => {
     fetchLeads(true); // silent polling
 }, 3000);
+
