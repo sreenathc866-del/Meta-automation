@@ -892,6 +892,8 @@ async function fetchConnectedAccounts() {
 
 async function fetchAdCampaigns() {
     const tbody = document.getElementById('campaigns-table-body');
+    const badge = document.getElementById('campaigns-count-badge');
+    if (badge) badge.innerText = 'Syncing...';
     try {
         const res = await fetch('/api/ads/campaigns');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -901,22 +903,39 @@ async function fetchAdCampaigns() {
     } catch (err) {
         console.error('Error fetching campaigns:', err);
         allCampaignsCache = [];
+        if (badge) {
+            badge.innerText = 'Error';
+            badge.style.background = '#fee2e2';
+            badge.style.color = '#b91c1c';
+        }
         if (tbody) {
-            tbody.innerHTML = `<tr><td colspan="6" style="padding: 2.5rem; text-align: center; color: #ef4444;">Failed to load campaigns: ${err.message}. <button onclick="fetchAdCampaigns()" style="margin-left: 8px; text-decoration: underline; background: none; border: none; color: #3b82f6; cursor: pointer;">Retry</button></td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="padding: 2.5rem; text-align: center; color: #ef4444; font-weight: 500;">Failed to load campaigns: ${err.message}. <button onclick="fetchAdCampaigns()" style="margin-left: 8px; text-decoration: underline; background: none; border: none; color: #3b82f6; cursor: pointer; font-weight: 600;">Click to Retry</button></td></tr>`;
         }
     }
 }
 
 function renderCampaignsTable() {
     const tbody = document.getElementById('campaigns-table-body');
+    const badge = document.getElementById('campaigns-count-badge');
     if (!tbody) return;
     tbody.innerHTML = '';
 
     if (!Array.isArray(allCampaignsCache) || allCampaignsCache.length === 0) {
+        if (badge) {
+            badge.innerText = '0 Campaigns';
+            badge.style.background = '#f3f4f6';
+            badge.style.color = '#6b7280';
+        }
         tbody.innerHTML = `<tr><td colspan="6" style="padding: 2.5rem; text-align: center; color: var(--text-secondary);">No campaigns yet. Click <strong>✨ Create Campaign</strong> to build one with AI!</td></tr>`;
         const activeMetric = document.getElementById('metric-active-campaigns');
         if (activeMetric) activeMetric.innerText = '0';
         return;
+    }
+
+    if (badge) {
+        badge.innerText = `${allCampaignsCache.length} Campaign${allCampaignsCache.length === 1 ? '' : 's'}`;
+        badge.style.background = '#dbeafe';
+        badge.style.color = '#1e40af';
     }
 
     let activeCount = 0;
@@ -928,6 +947,7 @@ function renderCampaignsTable() {
 
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid var(--border-color)';
+            tr.style.display = 'table-row';
 
             const statusColor = statusUpper === 'ACTIVE' ? '#10b981' : (statusUpper === 'PAUSED' ? '#f59e0b' : '#6b7280');
             const isApproved = !!c.approved;

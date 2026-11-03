@@ -651,6 +651,24 @@ body.dark-mode .chat-window::-webkit-scrollbar-thumb {
     border-collapse: collapse;
 }
 
+.campaigns-table tbody {
+    display: table-row-group !important;
+}
+
+.campaigns-table tbody tr {
+    display: table-row !important;
+    transition: background-color 0.15s ease;
+}
+
+.campaigns-table tbody tr:hover {
+    background-color: var(--table-header-bg);
+}
+
+.campaigns-table td {
+    display: table-cell !important;
+    vertical-align: middle !important;
+}
+
 /* --- Dark Mode Styles --- */
 body.dark-mode {
     background-color: #0b141a; /* WhatsApp Web dark bg */

@@ -276,10 +276,14 @@
                 <div style="padding: 1.1rem 1.25rem; border-bottom: 2px solid var(--border-color); font-weight: 700; font-size: 1.05rem; display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface);">
                     <span style="color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
                         <span>📊</span> All Advertising Campaigns
+                        <span id="campaigns-count-badge" style="font-size: 0.75rem; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 12px; font-weight: 700; margin-left: 4px;">Loading...</span>
                     </span>
-                    <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); background: var(--table-header-bg); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-color);">Status, Manual Approval & Actions</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button onclick="fetchAdCampaigns()" style="background: none; border: 1px solid var(--border-color); border-radius: 6px; padding: 3px 8px; font-size: 0.75rem; color: var(--text-secondary); cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">🔄 Reload Table</button>
+                        <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); background: var(--table-header-bg); padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-color);">Status, Manual Approval & Actions</span>
+                    </div>
                 </div>
-                <div id="campaigns-table-container" class="campaigns-table-wrapper" style="overflow-x: auto;">
+                <div id="campaigns-table-container" class="campaigns-table-wrapper" style="overflow-x: auto; min-height: 120px;">
                     <table class="campaigns-table" style="width: 100%; min-width: 920px; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
                         <thead>
                             <tr style="background: var(--table-header-bg); border-bottom: 2px solid var(--border-color); color: var(--text-secondary); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;">
@@ -739,6 +743,6 @@
         </div>
     </div>
 
-    <script src="app.js?v=20"></script>
+    <script src="app.js?v=21"></script>
 </body>
 </html>
