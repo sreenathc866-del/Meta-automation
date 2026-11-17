@@ -70,7 +70,7 @@ function appendMessage(role, text) {
   
   const label = document.createElement('div');
   label.className = 'message-label';
-  label.innerText = role === 'user' ? 'You' : 'Oqulix AI';
+  label.innerText = role === 'user' ? 'You' : 'Street Talks AI';
   
   const content = document.createElement('div');
   content.innerText = text;

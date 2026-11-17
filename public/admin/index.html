@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OQULIX - Lead Management Dashboard</title>
+    <title>Street Talks - In-Auto Advertising CRM & Dashboard</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=3">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=3">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=3">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#111827">
     <link rel="stylesheet" href="style.css?v=25">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Leaflet CSS & JS for Interactive Audience Radius Map -->
@@ -12,7 +18,10 @@
 </head>
 <body>
     <header class="navbar">
-        <div class="logo">OQULIX<span>AI</span> CRM & Ads</div>
+        <div class="logo" style="display: flex; align-items: center; gap: 8px;">
+            <img src="/favicon-32x32.png" alt="Street Talks" style="width: 24px; height: 24px; border-radius: 4px; object-fit: contain;">
+            <span>Street Talks</span>
+        </div>
         <div class="stats" style="display: flex; align-items: center; gap: 10px;">
             <button id="nav-ads-btn" onclick="toggleAdsPanel()" style="background: #3b82f6; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">🎯 Meta Ads</button>
             <button id="nav-bulk-btn" onclick="toggleBulkPanel()" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; gap: 5px;">📣 Bulk Send</button>

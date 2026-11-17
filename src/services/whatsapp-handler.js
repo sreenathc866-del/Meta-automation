@@ -426,7 +426,7 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
       !/^\+?\d{6,15}$/.test(strippedName);
 
     const displayName = isActualName ? strippedName : 'there';
-    const instantReply = `Hi ${displayName}! 👋 Welcome to OQULIX. How can I help you out today?`;
+    const instantReply = `Hi ${displayName}! Welcome to Street Talks.`;
     const wamid = await sendWhatsAppMessage(phoneNumber, instantReply);
     
     if (lead) {
@@ -461,6 +461,30 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
     wamid = await sendWhatsAppMessage(phoneNumber, responseText);
   } else {
     console.log(`[WhatsApp] AI Response was empty. Skipping sending to WhatsApp.`);
+  }
+
+  // 4b. Automatically send sample photos if customer expressed interest or asked for samples
+  if (leadData.send_sample_photos || (leadData.lead_status === 'HOT' && !lead.samples_sent)) {
+    try {
+      const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.BASE_URL || 'https://meta-automation-9mr8.onrender.com';
+      const sampleImages = [
+        `${baseUrl}/images/autoads_screen_live.jpg`,
+        `${baseUrl}/images/autoads_pricing_proposal.jpg`,
+        `${baseUrl}/images/autoads_malayalam_offer.jpg`
+      ];
+
+      console.log(`[WhatsApp] Automatically sending 3 sample photos to ${phoneNumber}...`);
+      for (const imgUrl of sampleImages) {
+        await sendWhatsAppMedia(phoneNumber, 'image', imgUrl);
+        await new Promise(res => setTimeout(res, 800)); // slight pause between photos
+      }
+
+      if (lead) {
+        await db.collection('leads').doc(lead.id).update({ samples_sent: true }).catch(() => {});
+      }
+    } catch (mediaErr) {
+      console.warn('[WhatsApp] Error auto-sending sample images:', mediaErr.message);
+    }
   }
 
   // 5. Save AI response and update lead in DB (if DB available)
