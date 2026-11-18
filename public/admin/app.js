@@ -1897,6 +1897,81 @@ async function deleteCampaignDraft(id, btn) {
 // Explicit Global Window Attachments for inline HTML event handlers
 window.switchMainPanel = switchMainPanel;
 window.toggleAdsPanel = toggleAdsPanel;
+// --- Export Leads to Excel (CSV format compatible with Microsoft Excel & Google Sheets) ---
+function exportLeadsToExcel() {
+    if (!allLeadsCache || allLeadsCache.length === 0) {
+        alert('No leads available to export.');
+        return;
+    }
+
+    // Sort leads by ranking / score descending
+    const sortedLeads = [...allLeadsCache].sort((a, b) => {
+        const scoreA = Number(a.lead_score || (a.lead_status === 'HOT' ? 95 : (a.lead_status === 'WARM' ? 65 : 20)));
+        const scoreB = Number(b.lead_score || (b.lead_status === 'HOT' ? 95 : (b.lead_status === 'WARM' ? 65 : 20)));
+        return scoreB - scoreA;
+    });
+
+    // Columns: Name, Phone, Rank / Score, Lead Status, Business Type, Service Required, Urgency, Budget, Created At
+    // (Notice: Last Chat Message / Conversation Summary is excluded as requested)
+    const headers = [
+        'Rank',
+        'Lead Score',
+        'Category / Status',
+        'Customer Name',
+        'Phone Number',
+        'Business Type',
+        'Service Required',
+        'Urgency',
+        'Budget',
+        'Date Added'
+    ];
+
+    const escapeCsv = (val) => {
+        if (val === null || val === undefined) return '""';
+        let str = String(val).replace(/"/g, '""');
+        return `"${str}"`;
+    };
+
+    const rows = sortedLeads.map((lead, index) => {
+        const rank = index + 1;
+        const score = lead.lead_score !== undefined ? lead.lead_score : (lead.lead_status === 'HOT' ? 95 : (lead.lead_status === 'WARM' ? 65 : 20));
+        const status = lead.lead_status || 'UNQUALIFIED';
+        const name = lead.customer_name || 'Unknown';
+        const phone = lead.phone_number || '';
+        const business = lead.business_type || 'N/A';
+        const service = lead.service_required || 'In-Auto Advertising';
+        const urgency = lead.urgency || 'MEDIUM';
+        const budget = lead.budget || 'N/A';
+        const dateAdded = lead.created_at ? new Date(lead.created_at).toLocaleString() : '';
+
+        return [
+            escapeCsv(rank),
+            escapeCsv(score),
+            escapeCsv(status),
+            escapeCsv(name),
+            escapeCsv(phone),
+            escapeCsv(business),
+            escapeCsv(service),
+            escapeCsv(urgency),
+            escapeCsv(budget),
+            escapeCsv(dateAdded)
+        ].join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `StreetTalks_Customer_Rankings_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+window.exportLeadsToExcel = exportLeadsToExcel;
 window.showAdsPanel = showAdsPanel;
 window.hideAdsPanel = hideAdsPanel;
 window.switchCampaignTab = switchCampaignTab;
