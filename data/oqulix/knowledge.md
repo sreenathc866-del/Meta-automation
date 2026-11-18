@@ -6,27 +6,35 @@
 - **Location**: MG Road, Kochi, Kerala
 - **Contact / Bookings & Enquiries**: +91 9497694866 (WhatsApp & Phone)
 - **Primary Service**: In-Auto Backlit Lightboard Advertising (illuminated lightboard mounted on the back side inside autorickshaws across Kochi).
-- **Core Value Proposition**: Promote businesses across prime, high-traffic locations in Kochi right inside autorickshaws starting at just ₹67 per day! Captive passenger attention, high illumination, and maximum brand recall at less than ₹1 per engaged customer.
+- **Core Value Proposition**: Promote businesses across prime, high-traffic locations in Kochi right inside autorickshaws with captive passenger attention, high illumination, and maximum brand recall at less than ₹1 per engaged customer.
 
 ---
 
 ## 2. ADVERTISING PACKAGES & PRICING
-We offer two simple, highly cost-effective in-auto lightboard packages:
+We offer only two packages (we do NOT sell single daily ads; ₹67 is simply the daily breakdown):
 
 ### Package 1: Monthly Package (1 Month)
-- **Price**: ₹2,000 per auto / per month
+- **Price**: ₹2,000 per autorickshaw / per month
 - **Duration**: Runs continuously for 1 month (30 days)
-- **Daily Effective Cost**: Approx. ₹67/day!
+- **Daily Effective Breakdown**: Works out to approximately ₹67/day!
 - **Cost Per Customer View**:
-  - One auto carries around 80 to 100 passengers per day.
-  - At ₹67/day for 80-100 passengers, it costs **only ₹0.67 to ₹0.80 (below ₹1!) per person** who actively sits and reads your brand message!
+  - One autorickshaw carries around 80 to 100 passengers per day.
+  - At ₹2,000/month (~₹67/day), it costs **only ₹0.67 to ₹0.80 (below 80 paise!) per customer** who sits and reads your brand message.
 
 ### Package 2: 2 Months Package (Best Value)
-- **Price**: ₹3,500 per auto for 2 months (Save ₹500 compared to 2 individual months!)
+- **Price**: ₹3,500 per autorickshaw for 2 months (Save ₹500 compared to 2 individual months!)
 - **Duration**: Runs continuously for 2 months (60 days)
-- **Daily Effective Cost**: Approx. ₹58/day!
+- **Daily Effective Breakdown**: Works out to approximately ₹58/day!
 - **Cost Per Customer View**:
-  - At ₹58/day for 80-100 passengers, it costs **only around ₹0.58 to ₹0.72 per person** (even cheaper, well below 80 paise per guaranteed engaged view!).
+  - At ₹3,500 for 2 months (~₹58/day), it costs **only around ₹0.58 to ₹0.70 per customer** (below 60 paise per guaranteed engaged view!).
+
+---
+
+## 3. PRICING RULES IN CONVERSATION:
+- **DO NOT reveal the price in the first message!**
+- Only state prices when the customer explicitly asks for pricing or rates.
+- Always quote the package rates first: **₹2,000 for 1 month** or **₹3,500 for 2 months**.
+- Explain that ₹67 is not a standalone daily plan, but the economical daily average breakdown of the ₹2,000 monthly package.
 
 ---
 
