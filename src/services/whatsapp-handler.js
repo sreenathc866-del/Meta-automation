@@ -3,6 +3,9 @@ const { searchOqulixKnowledge } = require('../rag/search');
 const { generateWhatsAppResponse } = require('../ai/whatsapp-gemini');
 const axios = require('axios');
 
+// In-memory set to guarantee photos are ONLY sent ONCE per phone number across the session
+const photosSentNumbers = new Set();
+
 // You can use axios to send messages back to WhatsApp API
 // const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 // const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID;
@@ -463,8 +466,18 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
     console.log(`[WhatsApp] AI Response was empty. Skipping sending to WhatsApp.`);
   }
 
-  // 4b. Automatically send sample photos if customer expressed interest or asked for samples
-  if (leadData.send_sample_photos || (leadData.lead_status === 'HOT' && !lead.samples_sent)) {
+  // 4b. Automatically send sample photos if customer expressed interest or asked for samples (ONLY ONCE per customer)
+  const alreadySent = photosSentNumbers.has(phoneNumber) || (lead && lead.samples_sent);
+  const wantsPhotos = (leadData.send_sample_photos || leadData.lead_status === 'HOT') && !alreadySent;
+
+  if (wantsPhotos) {
+    // Mark immediately to prevent duplicate runs
+    photosSentNumbers.add(phoneNumber);
+    if (lead) {
+      lead.samples_sent = true;
+      db.collection('leads').doc(lead.id).update({ samples_sent: true }).catch(() => {});
+    }
+
     try {
       const baseUrl = process.env.RENDER_EXTERNAL_URL || process.env.BASE_URL || 'https://meta-automation-9mr8.onrender.com';
       const sampleImages = [
@@ -473,14 +486,10 @@ async function processIncomingWhatsApp(phoneNumber, customerName, msgObject, mes
         `${baseUrl}/images/autoads_malayalam_offer.jpg`
       ];
 
-      console.log(`[WhatsApp] Automatically sending 3 sample photos to ${phoneNumber}...`);
+      console.log(`[WhatsApp] Automatically sending 3 sample photos to ${phoneNumber} (first and only time)...`);
       for (const imgUrl of sampleImages) {
         await sendWhatsAppMedia(phoneNumber, 'image', imgUrl);
         await new Promise(res => setTimeout(res, 800)); // slight pause between photos
-      }
-
-      if (lead) {
-        await db.collection('leads').doc(lead.id).update({ samples_sent: true }).catch(() => {});
       }
     } catch (mediaErr) {
       console.warn('[WhatsApp] Error auto-sending sample images:', mediaErr.message);
