@@ -1,3 +1,179 @@
+// --- Security & PIN Authentication State ---
+// Using sessionStorage so the session is automatically cleared when the browser or tab is closed
+let adminToken = sessionStorage.getItem('street_talks_admin_token') || null;
+let enteredPin = '';
+
+// Attach authorization token to all fetch calls automatically
+const originalFetch = window.fetch;
+window.fetch = function(url, options = {}) {
+    options = options || {};
+    options.headers = options.headers || {};
+    
+    // Normalize headers object
+    if (adminToken) {
+        if (options.headers instanceof Headers) {
+            options.headers.set('Authorization', `Bearer ${adminToken}`);
+        } else if (Array.isArray(options.headers)) {
+            options.headers.push(['Authorization', `Bearer ${adminToken}`]);
+        } else {
+            options.headers['Authorization'] = `Bearer ${adminToken}`;
+        }
+    }
+    
+    return originalFetch(url, options).then(res => {
+        if (res.status === 401 && !url.includes('/auth/')) {
+            // Unauthorized / expired session -> show PIN lock
+            showPinOverlay();
+        }
+        return res;
+    });
+};
+
+function showPinOverlay() {
+    enteredPin = '';
+    updatePinDots();
+    const overlay = document.getElementById('pin-lock-overlay');
+    if (overlay) overlay.style.display = 'flex';
+}
+
+function hidePinOverlay() {
+    const overlay = document.getElementById('pin-lock-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function updatePinDots() {
+    for (let i = 0; i < 6; i++) {
+        const dot = document.getElementById(`dot-${i}`);
+        if (!dot) continue;
+        if (i < enteredPin.length) {
+            dot.classList.add('filled');
+        } else {
+            dot.classList.remove('filled', 'success');
+        }
+    }
+}
+
+async function handlePinInput(digit) {
+    if (enteredPin.length >= 6) return;
+    enteredPin += digit;
+    updatePinDots();
+    document.getElementById('pin-error-msg').innerText = '';
+
+    if (enteredPin.length === 6) {
+        await submitPin();
+    }
+}
+
+function handlePinBackspace() {
+    if (enteredPin.length > 0) {
+        enteredPin = enteredPin.slice(0, -1);
+        updatePinDots();
+        document.getElementById('pin-error-msg').innerText = '';
+    }
+}
+
+function clearPin() {
+    enteredPin = '';
+    updatePinDots();
+    document.getElementById('pin-error-msg').innerText = '';
+}
+
+async function submitPin() {
+    const errorEl = document.getElementById('pin-error-msg');
+    const dotsContainer = document.getElementById('pin-dots-container');
+    
+    try {
+        const res = await originalFetch('/api/admin/auth/verify-pin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pin: enteredPin })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok && data.success && data.token) {
+            adminToken = data.token;
+            // Store only in sessionStorage so it clears on browser close
+            sessionStorage.setItem('street_talks_admin_token', adminToken);
+            localStorage.removeItem('street_talks_admin_token'); // clean legacy localStorage
+            
+            // Success animation: glow green
+            for (let i = 0; i < 6; i++) {
+                const dot = document.getElementById(`dot-${i}`);
+                if (dot) dot.classList.add('success');
+            }
+            
+            setTimeout(() => {
+                hidePinOverlay();
+                fetchLeads();
+                fetchConnectedAccounts().catch(() => {});
+                fetchAdCampaigns().catch(() => {});
+            }, 300);
+        } else {
+            // Error shake animation
+            dotsContainer.classList.add('shake-animation');
+            errorEl.innerText = data.error || 'Incorrect PIN';
+            setTimeout(() => {
+                dotsContainer.classList.remove('shake-animation');
+                clearPin();
+            }, 500);
+        }
+    } catch (err) {
+        errorEl.innerText = 'Network connection failed. Please retry.';
+        clearPin();
+    }
+}
+
+function logoutAdmin() {
+    sessionStorage.removeItem('street_talks_admin_token');
+    localStorage.removeItem('street_talks_admin_token');
+    adminToken = null;
+    showPinOverlay();
+}
+
+// Support physical keyboard digit input for desktop users
+document.addEventListener('keydown', (e) => {
+    const overlay = document.getElementById('pin-lock-overlay');
+    if (!overlay || overlay.style.display === 'none') return;
+
+    if (e.key >= '0' && e.key <= '9') {
+        handlePinInput(e.key);
+    } else if (e.key === 'Backspace') {
+        handlePinBackspace();
+    } else if (e.key === 'Escape') {
+        clearPin();
+    }
+});
+
+// Check existing session token on startup
+async function checkAuthOnStartup() {
+    if (!adminToken) {
+        showPinOverlay();
+        return;
+    }
+    
+    try {
+        const res = await originalFetch('/api/admin/auth/validate-session', {
+            headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+        if (res.ok) {
+            hidePinOverlay();
+            fetchLeads();
+            fetchConnectedAccounts().catch(() => {});
+            fetchAdCampaigns().catch(() => {});
+        } else {
+            showPinOverlay();
+        }
+    } catch (e) {
+        showPinOverlay();
+    }
+}
+
+window.handlePinInput = handlePinInput;
+window.handlePinBackspace = handlePinBackspace;
+window.clearPin = clearPin;
+window.logoutAdmin = logoutAdmin;
+
 // --- Dark Mode Logic ---
 function toggleDarkMode() {
     document.body.classList.toggle('dark-mode');
@@ -1988,13 +2164,13 @@ window.toggleAi = toggleAi;
 window.toggleBulkPanel = toggleBulkPanel;
 window.toggleDarkMode = toggleDarkMode;
 
-// Initial load
-fetchLeads();
-fetchConnectedAccounts().catch(e => console.warn('Init account fetch error:', e));
-fetchAdCampaigns().catch(e => console.warn('Init campaign fetch error:', e));
+// Initial load with authentication verification
+checkAuthOnStartup();
 
-// Automatic Live Sync: Automatically poll every 3 seconds so incoming messages & AI replies show up in real-time
+// Automatic Live Sync: Automatically poll every 3 seconds only if authenticated
 setInterval(() => {
-    fetchLeads(true); // silent polling
+    if (adminToken && (!document.getElementById('pin-lock-overlay') || document.getElementById('pin-lock-overlay').style.display === 'none')) {
+        fetchLeads(true); // silent polling
+    }
 }, 3000);
 

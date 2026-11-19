@@ -31,6 +31,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
                 </svg>
             </button>
+            <button id="logout-btn" onclick="logoutAdmin()" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.82rem; display: flex; align-items: center; gap: 4px;" title="Lock Admin Dashboard">🔒 Lock</button>
             <span class="stat-badge hot-badge">🔥 <span id="hot-count">0</span> HOT</span>
             <span class="stat-badge">Total: <span id="total-count">0</span></span>
         </div>
@@ -758,6 +759,186 @@
         </div>
     </div>
 
-    <script src="app.js?v=25"></script>
+    <!-- iPhone Glassmorphism 6-Digit PIN Lock Screen Overlay -->
+    <div id="pin-lock-overlay" style="display: flex; position: fixed; inset: 0; background: #000000; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif; color: #ffffff; padding: 20px;">
+        <div style="display: flex; flex-direction: column; align-items: center; max-width: 320px; width: 100%;">
+            <!-- Logo & Brand Header -->
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                <img src="/favicon-32x32.png" alt="Street Talks" style="width: 38px; height: 38px; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
+                <span style="font-size: 1.35rem; font-weight: 700; letter-spacing: -0.4px; color: #ffffff;">Street Talks</span>
+            </div>
+            
+            <div style="font-size: 1.3rem; font-weight: 600; margin-bottom: 6px; letter-spacing: -0.3px;">Enter Passcode</div>
+            <div style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.6); margin-bottom: 26px; text-align: center;">Enter your 6-digit security PIN</div>
+
+            <!-- 6 iPhone-Style PIN Indicator Dots -->
+            <div id="pin-dots-container" style="display: flex; gap: 16px; margin-bottom: 24px; transition: transform 0.2s;">
+                <div class="pin-dot" id="dot-0"></div>
+                <div class="pin-dot" id="dot-1"></div>
+                <div class="pin-dot" id="dot-2"></div>
+                <div class="pin-dot" id="dot-3"></div>
+                <div class="pin-dot" id="dot-4"></div>
+                <div class="pin-dot" id="dot-5"></div>
+            </div>
+
+            <!-- Error / Status Message -->
+            <div id="pin-error-msg" style="min-height: 22px; font-size: 0.82rem; color: #f87171; margin-bottom: 16px; text-align: center; font-weight: 500;"></div>
+
+            <!-- Authentic iPhone Glassmorphism Keypad Grid -->
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 22px; width: 100%; max-width: 280px;">
+                <button type="button" class="keypad-btn" onclick="handlePinInput('1')">
+                    <span class="keypad-num">1</span>
+                    <span class="keypad-sub">&nbsp;</span>
+                </button>
+                <button type="button" class="keypad-btn" onclick="handlePinInput('2')">
+                    <span class="keypad-num">2</span>
+                    <span class="keypad-sub">ABC</span>
+                </button>
+                <button type="button" class="keypad-btn" onclick="handlePinInput('3')">
+                    <span class="keypad-num">3</span>
+                    <span class="keypad-sub">DEF</span>
+                </button>
+                
+                <button type="button" class="keypad-btn" onclick="handlePinInput('4')">
+                    <span class="keypad-num">4</span>
+                    <span class="keypad-sub">GHI</span>
+                </button>
+                <button type="button" class="keypad-btn" onclick="handlePinInput('5')">
+                    <span class="keypad-num">5</span>
+                    <span class="keypad-sub">JKL</span>
+                </button>
+                <button type="button" class="keypad-btn" onclick="handlePinInput('6')">
+                    <span class="keypad-num">6</span>
+                    <span class="keypad-sub">MNO</span>
+                </button>
+                
+                <button type="button" class="keypad-btn" onclick="handlePinInput('7')">
+                    <span class="keypad-num">7</span>
+                    <span class="keypad-sub">PQRS</span>
+                </button>
+                <button type="button" class="keypad-btn" onclick="handlePinInput('8')">
+                    <span class="keypad-num">8</span>
+                    <span class="keypad-sub">TUV</span>
+                </button>
+                <button type="button" class="keypad-btn" onclick="handlePinInput('9')">
+                    <span class="keypad-num">9</span>
+                    <span class="keypad-sub">WXYZ</span>
+                </button>
+                
+                <button type="button" class="keypad-side-btn" onclick="clearPin()">Clear</button>
+                <button type="button" class="keypad-btn" onclick="handlePinInput('0')">
+                    <span class="keypad-num">0</span>
+                    <span class="keypad-sub">&nbsp;</span>
+                </button>
+                <button type="button" class="keypad-side-btn" onclick="handlePinBackspace()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: block; margin: auto;">
+                        <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+                        <line x1="18" y1="9" x2="12" y2="15"></line>
+                        <line x1="12" y1="9" x2="18" y2="15"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .pin-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255, 255, 255, 0.4);
+            background: transparent;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .pin-dot.filled {
+            background: #ffffff !important;
+            border-color: #ffffff !important;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.8) !important;
+            transform: scale(1.15);
+        }
+        .pin-dot.success {
+            background: #22c55e !important;
+            border-color: #22c55e !important;
+            box-shadow: 0 0 16px rgba(34, 197, 94, 0.9) !important;
+        }
+
+        /* Authentic iOS Glassmorphism Circular Button on Pure Black */
+        .keypad-btn {
+            width: 72px;
+            height: 72px;
+            margin: auto;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: #1c1c1e;
+            color: #ffffff;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+            transition: all 0.12s ease-out;
+        }
+        .keypad-btn:hover {
+            background: #2c2c2e;
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: scale(1.04);
+        }
+        .keypad-btn:active {
+            background: #48484a;
+            transform: scale(0.94);
+        }
+        .keypad-num {
+            font-size: 1.85rem;
+            font-weight: 400;
+            line-height: 1.1;
+            letter-spacing: -0.5px;
+        }
+        .keypad-sub {
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 1.6px;
+            color: rgba(255, 255, 255, 0.65);
+            margin-top: 1px;
+        }
+
+        /* Clear and Backspace side buttons */
+        .keypad-side-btn {
+            width: 72px;
+            height: 72px;
+            margin: auto;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            transition: all 0.15s ease;
+        }
+        .keypad-side-btn:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .keypad-side-btn:active {
+            transform: scale(0.92);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-14px); }
+            40%, 80% { transform: translateX(14px); }
+        }
+        .shake-animation {
+            animation: shake 0.4s ease-in-out;
+        }
+    </style>
+
+    <script src="app.js?v=26"></script>
 </body>
 </html>

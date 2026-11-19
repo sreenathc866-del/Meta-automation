@@ -11,6 +11,104 @@ const { processUserAudio, processUserText } = require('./src/services/voice-pipe
 const { processIncomingWhatsApp } = require('./src/services/whatsapp-handler');
 const { db, bucket } = require('./src/services/firebase');
 const axios = require('axios');
+const crypto = require('crypto');
+
+// ============================================
+// One-Way Cryptographic PIN Authentication
+// ============================================
+// Default Salt and Hash for initial setup (PIN: 392004)
+const DEFAULT_SALT = '721e77d957cae48bb0c3186d8e3cd5b4';
+const DEFAULT_HASH = '334c8471a012972fe8753e3ee1ec38db64fedfb2309587c88807c632731735a8';
+const JWT_SECRET = process.env.JWT_SECRET || 'street_talks_jwt_super_secret_key_884920';
+
+function getPinSalt() {
+  return process.env.ADMIN_PIN_SALT || DEFAULT_SALT;
+}
+
+function getExpectedHash() {
+  return (process.env.ADMIN_PIN_HASH || DEFAULT_HASH).toLowerCase().trim();
+}
+
+function hashPin(pin, salt) {
+  return crypto.createHmac('sha256', salt).update(String(pin)).digest('hex');
+}
+
+// In-Memory Brute-Force Rate Limiter (Lockout after 5 wrong attempts for 15 minutes)
+const failedAttempts = new Map(); // ip -> { count, lockedUntil }
+
+function checkRateLimit(ip) {
+  const record = failedAttempts.get(ip);
+  if (!record) return { allowed: true };
+  if (record.lockedUntil && Date.now() < record.lockedUntil) {
+    const remainingSeconds = Math.ceil((record.lockedUntil - Date.now()) / 1000);
+    return { allowed: false, remainingSeconds };
+  }
+  if (record.lockedUntil && Date.now() >= record.lockedUntil) {
+    failedAttempts.delete(ip);
+    return { allowed: true };
+  }
+  return { allowed: true };
+}
+
+function recordFailedAttempt(ip) {
+  const record = failedAttempts.get(ip) || { count: 0, lockedUntil: null };
+  record.count += 1;
+  if (record.count >= 5) {
+    record.lockedUntil = Date.now() + 15 * 60 * 1000; // 15-minute lockout
+  }
+  failedAttempts.set(ip, record);
+  return record;
+}
+
+function clearFailedAttempts(ip) {
+  failedAttempts.delete(ip);
+}
+
+// Generate signed authentication session token (HMAC-SHA256 based)
+function createSessionToken() {
+  const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days session
+  const payload = `admin:${expiresAt}`;
+  const signature = crypto.createHmac('sha256', JWT_SECRET).update(payload).digest('hex');
+  return `${Buffer.from(payload).toString('base64')}.${signature}`;
+}
+
+function verifySessionToken(token) {
+  if (!token || typeof token !== 'string') return false;
+  const parts = token.split('.');
+  if (parts.length !== 2) return false;
+  
+  try {
+    const payload = Buffer.from(parts[0], 'base64').toString('utf8');
+    const signature = parts[1];
+    const expectedSig = crypto.createHmac('sha256', JWT_SECRET).update(payload).digest('hex');
+    
+    // Constant-time comparison to prevent timing attacks
+    if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSig))) {
+      return false;
+    }
+    
+    const [user, expiresAtStr] = payload.split(':');
+    if (user !== 'admin') return false;
+    const expiresAt = Number(expiresAtStr);
+    if (!expiresAt || Date.now() > expiresAt) return false;
+    
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+// Admin Authentication Middleware
+function requireAdminAuth(req, res, next) {
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : (req.query.token || req.headers['x-admin-token']);
+  
+  if (verifySessionToken(token)) {
+    return next();
+  }
+  return res.status(401).json({ error: 'Unauthorized: Invalid or expired Admin PIN session.' });
+}
+// ============================================
 
 // --- In-Memory Cache for WhatsApp Webhook Deduplication ---
 const processedMessages = new Set();
@@ -48,6 +146,12 @@ const wssBrowser = new WebSocket.Server({ noServer: true });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Plivo sends webhook data as URL encoded form data
+
+// Lightweight keep-alive health check endpoint for cron-job.org / Uptime monitors
+app.get('/health', (req, res) => {
+  res.status(200).send('OK - Street Talks Server is Awake');
+});
+
 app.use(express.static('public', {
     setHeaders: (res, path) => {
         res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -345,7 +449,69 @@ app.post('/api/whatsapp/webhook', handleMetaWebhook);
 app.post('/api/meta/webhook', handleMetaWebhook);
 
 // ============================================
-// Admin Dashboard API
+// Admin PIN Authentication Endpoints
+// ============================================
+// Endpoint 1: Verify 6-digit PIN and generate session token
+app.post('/api/admin/auth/verify-pin', (req, res) => {
+  const ip = req.ip || req.connection.remoteAddress || 'unknown';
+  const rateLimit = checkRateLimit(ip);
+  if (!rateLimit.allowed) {
+    return res.status(429).json({
+      error: `Too many incorrect attempts. Locked out for ${rateLimit.remainingSeconds} seconds.`
+    });
+  }
+
+  const { pin } = req.body;
+  if (!pin || typeof pin !== 'string' || pin.trim().length !== 6) {
+    return res.status(400).json({ error: 'Please enter a valid 6-digit PIN.' });
+  }
+
+  const salt = getPinSalt();
+  const inputHash = hashPin(pin.trim(), salt);
+  const expectedHash = getExpectedHash();
+
+  // Constant-time buffer comparison to prevent timing attacks
+  const inputBuf = Buffer.from(inputHash);
+  const expectedBuf = Buffer.from(expectedHash);
+
+  let isMatch = false;
+  if (inputBuf.length === expectedBuf.length && crypto.timingSafeEqual(inputBuf, expectedBuf)) {
+    isMatch = true;
+  }
+
+  if (isMatch) {
+    clearFailedAttempts(ip);
+    const token = createSessionToken();
+    return res.json({ success: true, token });
+  } else {
+    const record = recordFailedAttempt(ip);
+    const remainingAttempts = Math.max(0, 5 - record.count);
+    if (record.lockedUntil) {
+      return res.status(429).json({
+        error: 'Too many incorrect attempts. Locked out for 15 minutes.'
+      });
+    }
+    return res.status(401).json({
+      error: `Incorrect PIN. ${remainingAttempts} attempts remaining before lockout.`
+    });
+  }
+});
+
+// Endpoint 2: Validate existing session token on page load
+app.get('/api/admin/auth/validate-session', (req, res) => {
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : (req.query.token || req.headers['x-admin-token']);
+  if (verifySessionToken(token)) {
+    return res.json({ valid: true });
+  }
+  return res.status(401).json({ valid: false });
+});
+
+// Mount secure authentication middleware to all /api/admin/* routes
+app.use('/api/admin', requireAdminAuth);
+
+// ============================================
+// Admin Dashboard API (Protected by PIN Session)
 // ============================================
 app.get('/api/admin/leads', async (req, res) => {
   try {
