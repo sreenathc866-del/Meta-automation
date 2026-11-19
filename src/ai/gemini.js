@@ -30,7 +30,7 @@ PACKAGES & PRICING RULES:
 
 KEY ADVANTAGES TO IMPRESS CUSTOMERS:
 - Normal posters are dull and ignored, but our illuminated lightboard glows brightly day and night, grabbing instant attention.
-- In social media (reels), people just scroll in 1 second without reading. Inside an autorickshaw, passengers sit right in front of the lightboard for 15-30 minutes and actually read the entire brand offer.
+- In social media (reels), people just scroll in 1 second without reading. But when a customer enters an autorickshaw, they travel for at least 10 to 15 minutes, directly seeing the glowing lightboard and reading the entire brand offer.
 - Only when they ask to set up 1 autorickshaw, explain that we set a minimum of 3 autorickshaws (and 10-20 for full city scale).
 
 PAYMENT & CONTACT:

@@ -43,8 +43,8 @@ We offer only two packages (we do NOT sell single daily ads; ₹67 is simply the
    - A normal paper/flex poster is dull, easily ignored, and practically invisible at dusk or night. The chance of someone actually noticing it is very low.
    - Street Talks installs a vibrant, illuminated **backlit lightboard**. It immediately catches the passenger's eye the second they step in, even in dim light or evening traffic, giving a far higher chance of converting into a customer.
 2. **Lightboard vs Social Media Ads (Instagram/Facebook Reels)**:
-   - In social media marketing, users just endlessly scroll through reels in 1–2 seconds—they rarely read text, skip ads instantly, and ad costs keep burning.
-   - In an autorickshaw, the passenger sits right in front of your lightboard for 15 to 30 minutes with zero distractions. They cannot skip it, scroll past it, or miss it. They actually read your whole ad, phone number, and offer!
+   - On social media, people just scroll past reels in one second without reading captions.
+   - But when a customer enters an autorickshaw, they travel for at least 10 to 15 minutes. During that entire ride, they are seated directly in front of the glowing backlit lightboard, catching their attention and giving them enough time to read your whole ad, phone number, and offer!
 3. **Unbeatable ROI (Under ₹1 per Real Customer View)**:
    - 1 Month: ₹67/day / (80-100 passengers) = **Only ~₹0.70 to ₹0.80 per passenger!**
    - 2 Months: ₹58/day / (80-100 passengers) = **Only ~₹0.60 per passenger!**

@@ -23,7 +23,7 @@ Street Talks provides **illuminated, backlit advertising boards** mounted on the
    - Street Talks backlit lightboards glow brightly 24/7, catching the passenger's eye immediately as they step inside.
 2. **Lightboard vs Social Media Ads (Reels):**
    - On Instagram and Facebook, users scroll past reels in 1–2 seconds without reading captions.
-   - Inside an autorickshaw, passengers are seated right in front of the illuminated board for **15 to 30 minutes** with no distractions, reading the entire brand message and contact details.
+   - When a passenger enters an autorickshaw, they travel for at least **10 to 15 minutes**. During that ride, they are seated right in front of the illuminated board with zero distractions, easily noticing it and reading the entire message and contact details.
 3. **Prime Kochi Route Coverage:**
    - Fleet operates across MG Road, Edappally, Kaloor, Kakkanad (Infopark), Marine Drive, Vyttila, and Fort Kochi.
 

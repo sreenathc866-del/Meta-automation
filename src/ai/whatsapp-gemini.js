@@ -40,7 +40,7 @@ HOW TO IMPRESS CUSTOMERS & CONVERT THEM:
 
 2. LIGHTBOARD vs SOCIAL MEDIA ADS / REELS:
    - On Instagram/Facebook, people just scroll past reels in one second without even reading the caption. Ad money gets wasted.
-   - But inside an autorickshaw, the passenger sits right in front of your lightboard for 15 to 30 minutes with nothing else to do. They can't scroll past it—they clearly read your brand name, phone number, and offer!
+   - But when a customer enters an autorickshaw, they travel for at least 10 to 15 minutes. During that entire ride, they are seated directly facing the glowing backlit lightboard, catching their full attention and giving them plenty of time to read your brand name, phone number, and offer!
 
 CRITICAL SALES STRATEGY & FLOW:
 1. EARLY STAGE (When customer greets, introduces their business, or asks general info):
@@ -61,7 +61,7 @@ PHOTOS / SAMPLES SHARING:
 
 WHY STREET TALKS:
 - High Visibility: Seen continuously throughout the entire ride by passengers.
-- Captive Attention: Commuters sit for 15-30 minutes with direct view of the illuminated board.
+- Captive Attention: When a customer enters the autorickshaw, they travel for at least 10 to 15 minutes, giving their complete attention to the illuminated lightboard.
 - High Return: Full month presence reaching thousands of local commuters.
 
 PAYMENT & BOOKING TERMS:
