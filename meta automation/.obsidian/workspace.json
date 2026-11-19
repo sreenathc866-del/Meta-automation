@@ -4,27 +4,31 @@
     "type": "split",
     "children": [
       {
-        "id": "01b721f981865627",
+        "id": "d2a1dfe9bebcd6d2",
         "type": "tabs",
         "children": [
           {
-            "id": "b94cf5f65ff55a95",
+            "id": "5bbfc3bc6aeb98ba",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "Brand & Offerings.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "Brand & Offerings"
             }
           }
         ]
       },
       {
-        "id": "4e75e347cc393e47",
+        "id": "6b62b85bb7e66841",
         "type": "tabs",
         "children": [
           {
-            "id": "72cc8475bb74d0aa",
+            "id": "bc2b5c58be1b936f",
             "type": "leaf",
             "state": {
               "type": "graph",
@@ -197,17 +201,20 @@
       "bases:Create new base": false
     }
   },
-  "active": "72cc8475bb74d0aa",
+  "active": "5bbfc3bc6aeb98ba",
   "lastOpenFiles": [
-    "Welcome.md",
     "Assets & Branding.md",
-    "CRM Dashboard & Excel Export.md",
-    "WhatsApp Cloud Automation.md",
     "AI Sales Strategy & Prompt Rules.md",
-    "Pricing & ROI Calculator.md",
-    "Brand & Offerings.md",
-    "Project Updates.md",
     "Street Talks - Home.md",
+    "WhatsApp Cloud Automation.md",
+    "Untitled.md",
+    "Project Updates.md",
+    "Untitled 1",
+    "Untitled",
+    "Brand & Offerings.md",
+    "Welcome.md",
+    "CRM Dashboard & Excel Export.md",
+    "Pricing & ROI Calculator.md",
     "create a link.md"
   ]
 }

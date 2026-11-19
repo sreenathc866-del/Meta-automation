@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Street Talks - In-Auto Advertising CRM & Dashboard</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico?v=3">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=3">
@@ -760,7 +760,7 @@
     </div>
 
     <!-- iPhone Glassmorphism 6-Digit PIN Lock Screen Overlay -->
-    <div id="pin-lock-overlay" style="display: flex; position: fixed; inset: 0; background: #000000; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif; color: #ffffff; padding: 20px;">
+    <div id="pin-lock-overlay" style="display: flex; position: fixed; inset: 0; background: #000000; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif; color: #ffffff; padding: 20px; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; overscroll-behavior: none;">
         <div style="display: flex; flex-direction: column; align-items: center; max-width: 320px; width: 100%;">
             <!-- Logo & Brand Header -->
             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
@@ -877,6 +877,8 @@
             align-items: center;
             justify-content: center;
             user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
             box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
             transition: all 0.12s ease-out;
         }
@@ -919,6 +921,8 @@
             align-items: center;
             justify-content: center;
             user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
             transition: all 0.15s ease;
         }
         .keypad-side-btn:hover {
@@ -938,6 +942,52 @@
             animation: shake 0.4s ease-in-out;
         }
     </style>
+
+    <script>
+        // Strictly prevent all forms of web zooming (Pinch, Double-Tap, Ctrl+Scroll, Ctrl+Keys)
+        document.addEventListener('gesturestart', function (e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        document.addEventListener('gesturechange', function (e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        document.addEventListener('gestureend', function (e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        // Prevent multi-touch pinch zooming on mobile screens
+        document.addEventListener('touchstart', function (e) {
+            if (e.touches && e.touches.length > 1) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Prevent double-tap zooming on iOS / Android
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (e) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+
+        // Prevent Ctrl + Mouse Wheel zooming on desktop
+        window.addEventListener('wheel', function (e) {
+            if (e.ctrlKey) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Prevent Ctrl + Plus / Ctrl + Minus / Ctrl + 0 keyboard zoom
+        window.addEventListener('keydown', function (e) {
+            if (e.ctrlKey && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
+                e.preventDefault();
+            }
+        });
+    </script>
 
     <script src="app.js?v=26"></script>
 </body>
