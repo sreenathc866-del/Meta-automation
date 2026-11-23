@@ -389,6 +389,13 @@ function switchMainPanel(panelName) {
     if (emptyState) emptyState.style.setProperty('display', panelName === 'empty' ? 'flex' : 'none', 'important');
     if (bulkPanel) bulkPanel.style.setProperty('display', panelName === 'bulk' ? 'flex' : 'none', 'important');
     if (adsPanel) adsPanel.style.setProperty('display', panelName === 'ads' ? 'flex' : 'none', 'important');
+
+    // Toggle body class so mobile hides the top navbar when viewing a chat, bulk, or ads panel
+    if (panelName === 'detail' || panelName === 'bulk' || panelName === 'ads') {
+        document.body.classList.add('in-chat-view');
+    } else {
+        document.body.classList.remove('in-chat-view');
+    }
 }
 
 function renderConversationMessages(messages) {
@@ -2073,7 +2080,7 @@ async function deleteCampaignDraft(id, btn) {
 // Explicit Global Window Attachments for inline HTML event handlers
 window.switchMainPanel = switchMainPanel;
 window.toggleAdsPanel = toggleAdsPanel;
-// --- Export Leads to Excel (CSV format compatible with Microsoft Excel & Google Sheets) ---
+// --- Export Leads to Real Excel (.xlsx) with Perfect Formatting & Auto-Fit Column Widths ---
 function exportLeadsToExcel() {
     if (!allLeadsCache || allLeadsCache.length === 0) {
         alert('No leads available to export.');
@@ -2087,8 +2094,18 @@ function exportLeadsToExcel() {
         return scoreB - scoreA;
     });
 
-    // Columns: Name, Phone, Rank / Score, Lead Status, Business Type, Service Required, Urgency, Budget, Created At
-    // (Notice: Last Chat Message / Conversation Summary is excluded as requested)
+    // Helper to format clean phone number without scientific notation (e.g. +91 94970 34866)
+    const formatPhoneNumber = (raw) => {
+        if (!raw) return 'N/A';
+        const digits = String(raw).replace(/\D/g, '');
+        if (digits.length === 12 && digits.startsWith('91')) {
+            return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`;
+        } else if (digits.length === 10) {
+            return `+91 ${digits.slice(0, 5)} ${digits.slice(5)}`;
+        }
+        return `+${digits}`;
+    };
+
     const headers = [
         'Rank',
         'Lead Score',
@@ -2102,49 +2119,141 @@ function exportLeadsToExcel() {
         'Date Added'
     ];
 
-    const escapeCsv = (val) => {
-        if (val === null || val === undefined) return '""';
-        let str = String(val).replace(/"/g, '""');
-        return `"${str}"`;
-    };
-
-    const rows = sortedLeads.map((lead, index) => {
+    const dataRows = sortedLeads.map((lead, index) => {
         const rank = index + 1;
         const score = lead.lead_score !== undefined ? lead.lead_score : (lead.lead_status === 'HOT' ? 95 : (lead.lead_status === 'WARM' ? 65 : 20));
         const status = lead.lead_status || 'UNQUALIFIED';
         const name = lead.customer_name || 'Unknown';
-        const phone = lead.phone_number || '';
+        const phone = formatPhoneNumber(lead.phone_number);
         const business = lead.business_type || 'N/A';
         const service = lead.service_required || 'In-Auto Advertising';
         const urgency = lead.urgency || 'MEDIUM';
         const budget = lead.budget || 'N/A';
-        const dateAdded = lead.created_at ? new Date(lead.created_at).toLocaleString() : '';
+        const dateAdded = lead.created_at ? new Date(lead.created_at).toLocaleString('en-IN', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        }) : 'N/A';
 
         return [
-            escapeCsv(rank),
-            escapeCsv(score),
-            escapeCsv(status),
-            escapeCsv(name),
-            escapeCsv(phone),
-            escapeCsv(business),
-            escapeCsv(service),
-            escapeCsv(urgency),
-            escapeCsv(budget),
-            escapeCsv(dateAdded)
-        ].join(',');
+            rank,
+            score,
+            status,
+            name,
+            phone,
+            business,
+            service,
+            urgency,
+            budget,
+            dateAdded
+        ];
     });
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
     const dateStr = new Date().toISOString().slice(0, 10);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `StreetTalks_Customer_Rankings_${dateStr}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    const fileName = `StreetTalks_Customer_Rankings_${dateStr}.xlsx`;
+
+    // If XLSX library is loaded, generate a real formatted .xlsx workbook
+    if (typeof XLSX !== 'undefined') {
+        const worksheetData = [headers, ...dataRows];
+        const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+
+        // Auto-fit column widths so no text or headers are cut off or squished
+        const colWidths = headers.map((header, colIndex) => {
+            let maxLen = header.length;
+            dataRows.forEach(row => {
+                const cellVal = row[colIndex] ? String(row[colIndex]) : '';
+                if (cellVal.length > maxLen) {
+                    maxLen = cellVal.length;
+                }
+            });
+            // Add comfortable padding of 4 characters to each column
+            return { wch: Math.max(maxLen + 4, 12) };
+        });
+        ws['!cols'] = colWidths;
+
+        // Apply styles: Header styling + Highlight HOT leads in Red
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        
+        // 1. Style Header Row
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const headerAddress = XLSX.utils.encode_cell({ r: 0, c: C });
+            if (ws[headerAddress]) {
+                ws[headerAddress].s = {
+                    font: { bold: true, color: { rgb: "FFFFFF" } },
+                    fill: { fgColor: { rgb: "1E293B" } }, // Dark navy header
+                    alignment: { horizontal: "center", vertical: "center" }
+                };
+            }
+        }
+
+        // 2. Style Data Rows & Highlight HOT leads in Red
+        for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+            const rowIndex = R - 1; // index in dataRows
+            const leadData = sortedLeads[rowIndex];
+            const isHot = (leadData && (leadData.lead_status === 'HOT' || leadData.lead_score >= 80));
+
+            // Ensure Phone Number column (index 4 / E) is explicitly treated as plain text strings
+            const phoneCellAddress = XLSX.utils.encode_cell({ r: R, c: 4 });
+            if (ws[phoneCellAddress]) {
+                ws[phoneCellAddress].t = 's'; // Force type String
+            }
+
+            // Apply styling across the row
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+                if (!ws[cellAddress]) continue;
+
+                if (isHot) {
+                    // Highlight HOT leads with soft light-red background and vivid red bold text
+                    ws[cellAddress].s = {
+                        fill: { fgColor: { rgb: "FEE2E2" } }, // Light red fill
+                        font: { color: { rgb: "DC2626" }, bold: (C === 2 || C === 3) }, // Red text, bold on status/name
+                        border: {
+                            top: { style: "thin", color: { rgb: "FCA5A5" } },
+                            bottom: { style: "thin", color: { rgb: "FCA5A5" } },
+                            left: { style: "thin", color: { rgb: "FCA5A5" } },
+                            right: { style: "thin", color: { rgb: "FCA5A5" } }
+                        }
+                    };
+                } else {
+                    // Regular clean row borders
+                    ws[cellAddress].s = {
+                        border: {
+                            top: { style: "thin", color: { rgb: "E2E8F0" } },
+                            bottom: { style: "thin", color: { rgb: "E2E8F0" } }
+                        }
+                    };
+                }
+            }
+        }
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Customer Rankings');
+        XLSX.writeFile(wb, fileName);
+    } else {
+        // Fallback to CSV if offline / CDN issue, using tab delimiter & text formatting
+        const escapeCsv = (val) => {
+            if (val === null || val === undefined) return '""';
+            let str = String(val).replace(/"/g, '""');
+            return `"${str}"`;
+        };
+
+        const csvRows = dataRows.map(row => row.map(escapeCsv).join(','));
+        const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...csvRows].join('\r\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `StreetTalks_Customer_Rankings_${dateStr}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
 }
 
 window.exportLeadsToExcel = exportLeadsToExcel;

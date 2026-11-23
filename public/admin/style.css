@@ -38,10 +38,13 @@ body {
 .navbar {
     background-color: #111827;
     color: white;
-    padding: 0.5rem 1.5rem;
+    padding: calc(env(safe-area-inset-top, 0px) + 0.5rem) 1.5rem 0.5rem 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-top: none !important;
+    box-shadow: none !important;
+    background-clip: padding-box;
 }
 
 .logo {
@@ -494,10 +497,17 @@ body.dark-mode .chat-window::-webkit-scrollbar-thumb {
 }
 
 @media (max-width: 768px) {
+    /* Hide top navbar when inside a chat conversation on mobile for native WhatsApp feel */
+    body.in-chat-view .navbar {
+        display: none !important;
+    }
+
     .navbar {
-        padding: 0.6rem 1rem;
+        padding: calc(env(safe-area-inset-top, 0px) + 0.6rem) 1rem 0.6rem 1rem;
         flex-wrap: wrap;
         gap: 8px;
+        border-top: none !important;
+        box-shadow: none !important;
     }
     
     .logo {
@@ -528,13 +538,15 @@ body.dark-mode .chat-window::-webkit-scrollbar-thumb {
     }
 
     .detail-panel {
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
+        right: 0;
+        bottom: 0;
         width: 100%;
         height: 100%;
         background: #f9fafb;
-        z-index: 10;
+        z-index: 1000;
     }
 
     .empty-state {
@@ -546,7 +558,8 @@ body.dark-mode .chat-window::-webkit-scrollbar-thumb {
     }
 
     .detail-header {
-        padding: 8px 12px;
+        padding: calc(env(safe-area-inset-top, 0px) + 10px) 12px 10px 12px;
+        border-top: none;
     }
     
     /* WhatsApp Mobile Chat Input Bar */

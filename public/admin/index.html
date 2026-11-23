@@ -10,7 +10,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#111827">
-    <link rel="stylesheet" href="style.css?v=25">
+    <link rel="stylesheet" href="style.css?v=26">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Leaflet CSS & JS for Interactive Audience Radius Map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -31,7 +31,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
                 </svg>
             </button>
-            <button id="logout-btn" onclick="logoutAdmin()" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.82rem; display: flex; align-items: center; gap: 4px;" title="Lock Admin Dashboard">🔒 Lock</button>
+            <button id="logout-btn" onclick="logoutAdmin()" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 1.05rem; display: flex; align-items: center; justify-content: center; line-height: 1;" title="Lock Admin Dashboard">🔒</button>
             <span class="stat-badge hot-badge">🔥 <span id="hot-count">0</span> HOT</span>
             <span class="stat-badge">Total: <span id="total-count">0</span></span>
         </div>
@@ -989,6 +989,8 @@
         });
     </script>
 
-    <script src="app.js?v=26"></script>
+    <!-- SheetJS (xlsx-js-style) for Native Real Excel .xlsx Export with Colors & Formatted Columns -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="app.js?v=28"></script>
 </body>
 </html>
