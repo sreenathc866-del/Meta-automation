@@ -332,6 +332,12 @@ function renderLeads() {
                </div>`
             : '';
         
+        // Check if customer was called
+        const isCalled = lead.called === true;
+        const calledBadgeHtml = isCalled 
+            ? `<span style="background: rgba(16, 185, 129, 0.15); color: #059669; font-size: 0.68rem; font-weight: 700; border-radius: 4px; padding: 1px 6px; display: inline-flex; align-items: center; gap: 3px; border: 1px solid rgba(16, 185, 129, 0.3);">📞 Called</span>` 
+            : '';
+
         card.innerHTML = `
             <div class="lead-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <span class="lead-name" style="font-weight: ${unreadCount > 0 ? '700' : '600'}; display: flex; align-items: center; gap: 6px;">
@@ -339,12 +345,16 @@ function renderLeads() {
                     ${unreadCount > 0 ? '<span style="width: 8px; height: 8px; background: #25d366; border-radius: 50%; display: inline-block;"></span>' : ''}
                 </span>
                 <div style="display: flex; align-items: center; gap: 6px;">
+                    ${calledBadgeHtml}
                     ${unreadBadgeHtml}
                     <span class="status-badge ${lead.lead_status}">${lead.lead_status}</span>
                 </div>
             </div>
             <div class="lead-meta" style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
-                <span>${lead.phone_number}</span>
+                <span style="display: flex; align-items: center; gap: 4px;">
+                    ${isCalled ? '<span style="color: #10b981; font-size: 0.85rem;" title="Called">✓</span>' : ''}
+                    <span>${lead.phone_number}</span>
+                </span>
                 <span>${timeStr}</span>
             </div>
             ${lastMsgPreview}
@@ -385,8 +395,11 @@ function switchMainPanel(panelName) {
     const bulkPanel = document.getElementById('bulk-panel');
     const adsPanel = document.getElementById('ads-panel');
 
+    const isMobile = window.innerWidth <= 768;
+
     if (detailPanel) detailPanel.style.setProperty('display', panelName === 'detail' ? 'flex' : 'none', 'important');
-    if (emptyState) emptyState.style.setProperty('display', panelName === 'empty' ? 'flex' : 'none', 'important');
+    // On mobile screens, emptyState is ALWAYS hidden (never displayed) so it never bleeds or overlaps
+    if (emptyState) emptyState.style.setProperty('display', (!isMobile && panelName === 'empty') ? 'flex' : 'none', 'important');
     if (bulkPanel) bulkPanel.style.setProperty('display', panelName === 'bulk' ? 'flex' : 'none', 'important');
     if (adsPanel) adsPanel.style.setProperty('display', panelName === 'ads' ? 'flex' : 'none', 'important');
 
@@ -494,11 +507,27 @@ async function loadLeadDetail(lead) {
     // Populate header details
     document.getElementById('detail-name').innerText = lead.customer_name || 'Unknown User';
     document.getElementById('detail-phone').innerText = lead.phone_number;
-    document.getElementById('detail-badges').innerHTML = `<span class="status-badge ${lead.lead_status}">${lead.lead_status}</span>`;
+    const isLeadCalled = lead.called === true;
+    const calledHeaderBadge = isLeadCalled 
+        ? `<span style="background: #10b981; color: white; font-size: 0.75rem; font-weight: 700; border-radius: 4px; padding: 2px 7px; display: inline-flex; align-items: center; gap: 3px;">📞 CALLED</span>` 
+        : '';
+    document.getElementById('detail-badges').innerHTML = `${calledHeaderBadge} <span class="status-badge ${lead.lead_status}">${lead.lead_status}</span>`;
+    
+    // Update menu text & icon for called status
+    updateMenuCalledState(isLeadCalled);
     
     // Populate drawer details
     document.getElementById('drawer-name').innerText = lead.customer_name || 'Unknown User';
-    document.getElementById('drawer-phone').innerText = lead.phone_number;
+    const drawerPhoneEl = document.getElementById('drawer-phone');
+    if (drawerPhoneEl) {
+        drawerPhoneEl.innerText = lead.phone_number || '';
+        drawerPhoneEl.setAttribute('data-phone', lead.phone_number || '');
+    }
+    const drawerCallBtn = document.getElementById('drawer-call-btn');
+    if (drawerCallBtn) {
+        const cleanDigits = String(lead.phone_number || '').replace(/[^\d+]/g, '');
+        drawerCallBtn.href = cleanDigits ? `tel:${cleanDigits}` : '#';
+    }
     document.getElementById('drawer-service').innerText = lead.service_required || '-';
     document.getElementById('drawer-timeline').innerText = lead.timeline || '-';
     document.getElementById('drawer-budget').innerText = lead.budget || '-';
@@ -565,10 +594,120 @@ async function toggleAi() {
 
 function goBack() {
     currentLeadId = null;
+    const detailPanel = document.getElementById('detail-panel');
+    if (detailPanel) {
+        detailPanel.style.transform = '';
+        detailPanel.style.transition = '';
+    }
     switchMainPanel('empty');
     const contactPanel = document.getElementById('contact-info-panel');
     if (contactPanel) contactPanel.style.display = 'none';
 }
+
+// --- WhatsApp iOS Native Left-Edge Swipe to Go Back Gesture ---
+(function initIosSwipeToGoBack() {
+    let startX = 0;
+    let startY = 0;
+    let currentX = 0;
+    let isSwiping = false;
+    let isHorizontalGesture = null;
+
+    // Generous threshold so it easily catches edge swipes on iPhone / Android
+    const EDGE_THRESHOLD = 70; // within 70px of left edge
+    const MIN_DISMISS_DISTANCE = 70; // drag at least 70px to trigger back
+
+    window.addEventListener('touchstart', (e) => {
+        // STRICT CHECK: ONLY active when specifically inside a chat conversation!
+        const detailPanel = document.getElementById('detail-panel');
+        const isDetailVisible = detailPanel && detailPanel.style.display === 'flex' && document.body.classList.contains('in-chat-view');
+        
+        // If not in a chat (e.g. on Recent Leads list), block browser history navigation from edge swipe!
+        if (!isDetailVisible || !currentLeadId) {
+            isSwiping = false;
+            // Prevent Safari/Chrome edge swipe from navigating back off the site
+            if (e.touches && e.touches[0] && e.touches[0].clientX <= 30) {
+                e.preventDefault();
+            }
+            return;
+        }
+        if (!e.touches || e.touches.length !== 1) return;
+
+        const touch = e.touches[0];
+        if (touch.clientX <= EDGE_THRESHOLD) {
+            startX = touch.clientX;
+            startY = touch.clientY;
+            currentX = startX;
+            isSwiping = true;
+            isHorizontalGesture = null;
+        }
+    }, { passive: false, capture: true });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!isSwiping || !e.touches || e.touches.length !== 1) return;
+
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - startX;
+        const deltaY = touch.clientY - startY;
+
+        // Determine if horizontal on the first 5px of movement
+        if (isHorizontalGesture === null) {
+            if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+                isHorizontalGesture = Math.abs(deltaX) > Math.abs(deltaY) && deltaX > 0;
+                if (!isHorizontalGesture) {
+                    isSwiping = false;
+                    return;
+                }
+            } else {
+                return;
+            }
+        }
+
+        if (!isHorizontalGesture) return;
+
+        currentX = touch.clientX;
+        const detailPanel = document.getElementById('detail-panel');
+        if (detailPanel && deltaX > 0) {
+            detailPanel.style.transition = 'none';
+            detailPanel.style.transform = `translateX(${deltaX}px)`;
+            detailPanel.style.boxShadow = '-5px 0 25px rgba(0,0,0,0.3)';
+        }
+    }, { passive: true, capture: true });
+
+    const handleTouchEnd = () => {
+        if (!isSwiping) return;
+        isSwiping = false;
+
+        const detailPanel = document.getElementById('detail-panel');
+        if (!detailPanel) return;
+
+        const deltaX = currentX - startX;
+        if (isHorizontalGesture && deltaX >= MIN_DISMISS_DISTANCE) {
+            // Animate out to the right and return to inbox list
+            detailPanel.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.9, 0.3, 1)';
+            detailPanel.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                detailPanel.style.transform = '';
+                detailPanel.style.transition = '';
+                detailPanel.style.boxShadow = '';
+                goBack();
+            }, 220);
+        } else {
+            // Animate back to original position
+            detailPanel.style.transition = 'transform 0.18s ease-out';
+            detailPanel.style.transform = 'translateX(0)';
+            setTimeout(() => {
+                detailPanel.style.transform = '';
+                detailPanel.style.transition = '';
+                detailPanel.style.boxShadow = '';
+            }, 180);
+        }
+
+        isHorizontalGesture = null;
+    };
+
+    window.addEventListener('touchend', handleTouchEnd, { passive: true, capture: true });
+    window.addEventListener('touchcancel', handleTouchEnd, { passive: true, capture: true });
+})();
 
 function toggleContactInfo() {
     const panel = document.getElementById('contact-info-panel');
@@ -578,6 +717,140 @@ function toggleContactInfo() {
         panel.style.display = 'none';
     }
 }
+
+// --- Three Dots Menu & Profile / Call Actions ---
+function toggleThreeDotMenu(event) {
+    if (event) event.stopPropagation();
+    const dropdown = document.getElementById('three-dot-dropdown');
+    if (!dropdown) return;
+    dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+}
+
+// Close three dot dropdown when clicking anywhere outside
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('three-dot-dropdown');
+    const btn = document.getElementById('three-dot-menu-btn');
+    if (dropdown && dropdown.style.display === 'block') {
+        if (!dropdown.contains(e.target) && (!btn || !btn.contains(e.target))) {
+            dropdown.style.display = 'none';
+        }
+    }
+});
+
+function openContactProfileModal() {
+    const dropdown = document.getElementById('three-dot-dropdown');
+    if (dropdown) dropdown.style.display = 'none';
+    toggleContactInfo();
+}
+
+function updateMenuCalledState(isCalled) {
+    const iconEl = document.getElementById('menu-called-icon');
+    const textEl = document.getElementById('menu-called-text');
+    if (!iconEl || !textEl) return;
+    if (isCalled) {
+        iconEl.innerText = '🔄';
+        textEl.innerText = 'Unmark as Called';
+    } else {
+        iconEl.innerText = '✅';
+        textEl.innerText = 'Mark as Called';
+    }
+}
+
+async function toggleCurrentLeadCalled() {
+    if (!currentLeadId) return;
+    const dropdown = document.getElementById('three-dot-dropdown');
+    if (dropdown) dropdown.style.display = 'none';
+
+    const currentLead = allLeadsCache.find(l => l.id === currentLeadId);
+    const targetState = !(currentLead && currentLead.called === true);
+
+    try {
+        const response = await fetch(`/api/admin/leads/${currentLeadId}/called`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ called: targetState })
+        });
+        const resData = await response.json();
+        if (resData.success) {
+            if (currentLead) {
+                currentLead.called = resData.called;
+                currentLead.called_at = resData.called ? new Date().toISOString() : null;
+            }
+            renderLeads();
+            const calledHeaderBadge = resData.called 
+                ? `<span style="background: #10b981; color: white; font-size: 0.75rem; font-weight: 700; border-radius: 4px; padding: 2px 7px; display: inline-flex; align-items: center; gap: 3px;">📞 CALLED</span>` 
+                : '';
+            document.getElementById('detail-badges').innerHTML = `${calledHeaderBadge} <span class="status-badge ${currentLead.lead_status}">${currentLead.lead_status}</span>`;
+            updateMenuCalledState(resData.called);
+        }
+    } catch (e) {
+        console.error('Failed to toggle called status:', e);
+        alert('Error updating called status.');
+    }
+}
+
+function callCustomerDirect() {
+    const dropdown = document.getElementById('three-dot-dropdown');
+    if (dropdown) dropdown.style.display = 'none';
+    const phoneEl = document.getElementById('detail-phone');
+    if (!phoneEl) return;
+    const rawPhone = phoneEl.innerText || '';
+    const cleanDigits = rawPhone.replace(/[^\d+]/g, '');
+    if (cleanDigits) {
+        // Automatically mark as called if not already marked
+        if (currentLeadId) {
+            const currentLead = allLeadsCache.find(l => l.id === currentLeadId);
+            if (currentLead && !currentLead.called) {
+                toggleCurrentLeadCalled();
+            }
+        }
+        window.location.href = `tel:${cleanDigits}`;
+    } else {
+        alert('Phone number not available to call.');
+    }
+}
+
+function copyDrawerPhone(event) {
+    if (event) event.stopPropagation();
+    const phoneEl = document.getElementById('drawer-phone');
+    if (!phoneEl) return;
+    const phone = phoneEl.innerText || phoneEl.getAttribute('data-phone') || '';
+    if (!phone) return;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(phone).then(showToast).catch(() => fallbackCopy(phone));
+    } else {
+        fallbackCopy(phone);
+    }
+
+    function showToast() {
+        const toast = document.getElementById('copy-toast');
+        if (toast) {
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
+        }
+    }
+
+    function fallbackCopy(text) {
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        document.body.appendChild(temp);
+        temp.select();
+        try {
+            document.execCommand('copy');
+            showToast();
+        } catch (e) {
+            console.error('Copy failed:', e);
+        }
+        document.body.removeChild(temp);
+    }
+}
+
+window.toggleThreeDotMenu = toggleThreeDotMenu;
+window.openContactProfileModal = openContactProfileModal;
+window.callCustomerDirect = callCustomerDirect;
+window.copyDrawerPhone = copyDrawerPhone;
+window.toggleCurrentLeadCalled = toggleCurrentLeadCalled;
 
 async function clearCurrentChat() {
     if (!currentLeadId) return;

@@ -79,11 +79,29 @@
                         <span class="status-badge HOT">HOT</span>
                     </div>
                     <!-- Three dots menu icon -->
-                    <button class="icon-btn" onclick="toggleContactInfo()" title="Contact Info">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 24px; height: 24px; color: #4b5563;">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
-                        </svg>
-                    </button>
+                    <div style="position: relative;">
+                        <button class="icon-btn" id="three-dot-menu-btn" onclick="toggleThreeDotMenu(event)" title="Options">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 24px; height: 24px; color: #4b5563;">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                            </svg>
+                        </button>
+                        <!-- Dropdown Menu -->
+                        <div id="three-dot-dropdown" style="display: none; position: absolute; right: 0; top: 110%; background: var(--bg-surface, #ffffff); border: 1px solid var(--border-color, #e5e7eb); border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); min-width: 200px; z-index: 1050; overflow: hidden; padding: 6px 0;">
+                            <button type="button" onclick="openContactProfileModal()" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 16px; background: none; border: none; text-align: left; cursor: pointer; color: var(--text-primary, #111827); font-size: 0.9rem; font-weight: 500;">
+                                <span style="font-size: 1.1rem;">👤</span> View Profile
+                            </button>
+                            <button type="button" onclick="callCustomerDirect()" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 16px; background: none; border: none; text-align: left; cursor: pointer; color: #10b981; font-size: 0.9rem; font-weight: 500;">
+                                <span style="font-size: 1.1rem;">📞</span> Call Customer
+                            </button>
+                            <button type="button" id="menu-toggle-called-btn" onclick="toggleCurrentLeadCalled()" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 16px; background: none; border: none; text-align: left; cursor: pointer; color: #3b82f6; font-size: 0.9rem; font-weight: 500;">
+                                <span style="font-size: 1.1rem;" id="menu-called-icon">✅</span> <span id="menu-called-text">Mark as Called</span>
+                            </button>
+                            <div style="height: 1px; background: var(--border-color, #e5e7eb); margin: 4px 0;"></div>
+                            <button type="button" onclick="clearCurrentChat()" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 16px; background: none; border: none; text-align: left; cursor: pointer; color: #ef4444; font-size: 0.9rem; font-weight: 500;">
+                                <span style="font-size: 1.1rem;">🗑️</span> Clear Chat
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -135,7 +153,13 @@
                 <div style="margin-bottom: 20px; text-align: center;">
                     <div style="width: 100px; height: 100px; background: #e5e7eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: #9ca3af; margin: 0 auto 10px;">👤</div>
                     <h2 id="drawer-name" style="margin: 0; font-size: 1.3rem;">Name</h2>
-                    <p id="drawer-phone" style="margin: 5px 0 0; color: #6b7280;">Phone</p>
+                    <div style="margin-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                        <span id="drawer-phone" style="color: #6b7280; font-size: 0.95rem; font-weight: 500; cursor: pointer; padding: 4px 10px; border-radius: 6px; background: rgba(0,0,0,0.04); user-select: all;" title="Click or long press to copy phone number" onclick="copyDrawerPhone(event)">Phone</span>
+                        <div id="copy-toast" style="display: none; font-size: 0.75rem; color: #10b981; font-weight: 600;">✓ Copied to clipboard!</div>
+                        <a id="drawer-call-btn" href="tel:" style="display: inline-flex; align-items: center; gap: 6px; background: #10b981; color: white; text-decoration: none; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-top: 4px; box-shadow: 0 2px 5px rgba(16,185,129,0.3);">
+                            <span>📞</span> Call Now
+                        </a>
+                    </div>
                 </div>
 
                 <div class="info-card" style="margin-bottom: 10px;">
@@ -991,6 +1015,6 @@
 
     <!-- SheetJS (xlsx-js-style) for Native Real Excel .xlsx Export with Colors & Formatted Columns -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-    <script src="app.js?v=28"></script>
+    <script src="app.js?v=30"></script>
 </body>
 </html>

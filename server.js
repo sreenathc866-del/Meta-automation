@@ -560,6 +560,27 @@ app.post('/api/admin/leads/:id/read', async (req, res) => {
   }
 });
 
+// Toggle called status for a lead
+app.post('/api/admin/leads/:id/called', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { called } = req.body;
+    const leadRef = db.collection('leads').doc(id);
+    const doc = await leadRef.get();
+    if (!doc.exists) return res.status(404).json({ error: 'Lead not found' });
+    
+    const newCalledStatus = (typeof called === 'boolean') ? called : !(doc.data().called === true);
+    await leadRef.update({
+      called: newCalledStatus,
+      called_at: newCalledStatus ? new Date().toISOString() : null
+    });
+    res.json({ success: true, called: newCalledStatus });
+  } catch (error) {
+    console.error('Error toggling called status:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.delete('/api/admin/leads/:id/conversations', async (req, res) => {
   try {
     const { id } = req.params;

@@ -27,6 +27,11 @@ body.dark-mode {
     font-family: 'Inter', sans-serif;
 }
 
+html, body {
+    overscroll-behavior-x: none;
+    overscroll-behavior-y: auto;
+}
+
 body {
     background-color: var(--bg-primary);
     color: var(--text-primary);
@@ -533,8 +538,20 @@ body.dark-mode .chat-window::-webkit-scrollbar-thumb {
     }
     
     .leads-panel {
-        width: 100%;
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: 1 1 100% !important;
         border-right: none;
+    }
+
+    #empty-state,
+    .empty-state {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
     }
 
     .detail-panel {
@@ -547,6 +564,19 @@ body.dark-mode .chat-window::-webkit-scrollbar-thumb {
         height: 100%;
         background: #f9fafb;
         z-index: 1000;
+    }
+
+    /* Make contact info panel appear as a full/slide-in drawer on mobile above chat */
+    .contact-info-panel {
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: var(--bg-surface, #ffffff) !important;
+        z-index: 1100 !important;
     }
 
     .empty-state {
