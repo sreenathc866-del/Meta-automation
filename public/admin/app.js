@@ -1291,13 +1291,27 @@ async function fetchConnectedAccounts() {
                 const balanceEl = document.getElementById('metric-account-balance');
                 if (balanceEl) {
                     const currency = acc.currency === 'INR' ? '₹' : (acc.currency === 'USD' ? '$' : `${acc.currency} `);
-                    // Meta returns balance/amount_spent in cents / subunits (divide by 100) or direct number
-                    if (acc.balance !== undefined && acc.balance !== null) {
-                        const balNum = (parseFloat(acc.balance) / 100).toFixed(2);
-                        balanceEl.innerText = `${currency}${balNum}`;
-                    } else {
-                        balanceEl.innerText = `${currency}0.00`;
+                    
+                    // 1. Check funding_source_details.display_string (e.g. "Available balance (₹39.99 INR)")
+                    let displayedBalance = null;
+                    if (acc.funding_source_details && acc.funding_source_details.display_string) {
+                        const match = acc.funding_source_details.display_string.match(/[\d,.]+/);
+                        if (match) {
+                            displayedBalance = `${currency}${match[0]}`;
+                        }
                     }
+
+                    // 2. Fallback to acc.balance if funding_source_details is not present
+                    if (!displayedBalance) {
+                        if (acc.balance !== undefined && acc.balance !== null && parseFloat(acc.balance) > 0) {
+                            const balNum = (parseFloat(acc.balance) / 100).toFixed(2);
+                            displayedBalance = `${currency}${balNum}`;
+                        } else {
+                            displayedBalance = `${currency}0.00`;
+                        }
+                    }
+
+                    balanceEl.innerText = displayedBalance;
 
                     if (acc.amount_spent !== undefined && acc.amount_spent !== null) {
                         const spentNum = (parseFloat(acc.amount_spent) / 100).toFixed(2);
