@@ -186,23 +186,37 @@ router.get('/campaigns', async (req, res) => {
     // Merge without duplicates (favor stored campaign for draft metadata, but sync published status and live status)
     const liveById = new Map(liveCampaigns.map(lc => [lc.id, lc]));
     
-    // For stored campaigns that have been published to Meta, sync the real-time Meta status and source
-    const updatedStored = storedCampaigns.map(c => {
-      if (c.meta_campaign_id && liveById.has(c.meta_campaign_id)) {
+    // For stored campaigns that have been published to Meta:
+    // If the campaign was deleted/archived on Meta, clean it up from Firestore!
+    const validStored = [];
+    for (const c of storedCampaigns) {
+      if (c.meta_campaign_id) {
+        if (!liveById.has(c.meta_campaign_id)) {
+          // Campaign was deleted/archived on Meta! Auto-delete from DB so it doesn't linger
+          try {
+            await db.collection('ad_campaigns').doc(c.id).delete();
+            console.log(`[Ads Sync] Auto-cleaned deleted Meta campaign ${c.meta_campaign_id} (doc: ${c.id})`);
+          } catch (cleanErr) {
+            console.warn('[Ads Sync] Failed to delete orphaned campaign doc:', cleanErr.message);
+          }
+          continue; // do not include in response
+        }
         const live = liveById.get(c.meta_campaign_id);
-        return {
+        validStored.push({
           ...c,
           status: live.status,
           dailyBudget: live.dailyBudget || c.dailyBudget,
           source: 'META_LIVE'
-        };
+        });
+      } else {
+        // Unsaved or unpublished local draft
+        validStored.push(c);
       }
-      return c;
-    });
+    }
 
-    const storedMetaIds = new Set(updatedStored.map(c => c.meta_campaign_id || c.id));
+    const storedMetaIds = new Set(validStored.map(c => c.meta_campaign_id || c.id));
     const combined = [
-      ...updatedStored,
+      ...validStored,
       ...liveCampaigns.filter(lc => !storedMetaIds.has(lc.id))
     ];
 
