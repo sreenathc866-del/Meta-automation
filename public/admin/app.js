@@ -1468,7 +1468,7 @@ function renderCampaignsTable() {
             const statusUpper = String(c.status || 'DRAFT').toUpperCase();
             if (statusUpper === 'ACTIVE') activeCount++;
 
-            const isDraft = statusUpper === 'DRAFT' || !c.published || c.source !== 'META_LIVE';
+            const isDraft = statusUpper === 'DRAFT' || (!c.published && !c.meta_campaign_id) || (c.source !== 'META_LIVE' && !c.published && !c.meta_campaign_id);
             const isApproved = !!c.approved;
 
             const tr = document.createElement('tr');
@@ -1489,14 +1489,14 @@ function renderCampaignsTable() {
                 approvedBadge = `<span style="background: #f1f5f9; color: #475569; font-size: 0.72rem; font-weight: 600; padding: 4px 8px; border-radius: 12px; white-space: nowrap;">Live Meta</span>`;
             }
 
-            const campId = String(c.id || c.meta_campaign_id || idx);
+            const campId = String(c.meta_campaign_id || c.id || idx);
             const safeCampId = campId.replace(/'/g, "\\'");
             let actionBtns = '';
 
             if (isDraft) {
                 if (!isApproved) {
                     actionBtns += `<button onclick="approveCampaign('${safeCampId}', this)" style="background: #10b981; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 700; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">✅ Approve</button>`;
-                } else if (!c.published) {
+                } else if (!c.published && !c.meta_campaign_id) {
                     actionBtns += `<button onclick="publishCampaign('${safeCampId}', this)" style="background: #2563eb; color: white; border: none; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: 700; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1);">🚀 Publish to Meta</button>`;
                 }
                 actionBtns += `<button onclick="deleteCampaignDraft('${safeCampId}', this)" style="background: transparent; color: #ef4444; border: 1px solid #fca5a5; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.78rem; font-weight: 600; white-space: nowrap;" title="Delete this draft">🗑️ Delete</button>`;

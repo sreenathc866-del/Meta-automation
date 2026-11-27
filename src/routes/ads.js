@@ -183,11 +183,27 @@ router.get('/campaigns', async (req, res) => {
       console.warn('[Ads] Note: Could not fetch live campaigns from Meta:', metaErr.message);
     }
 
-    // Merge without duplicates (favor stored campaign for draft metadata)
-    const storedIds = new Set(storedCampaigns.map(c => c.meta_campaign_id || c.id));
+    // Merge without duplicates (favor stored campaign for draft metadata, but sync published status and live status)
+    const liveById = new Map(liveCampaigns.map(lc => [lc.id, lc]));
+    
+    // For stored campaigns that have been published to Meta, sync the real-time Meta status and source
+    const updatedStored = storedCampaigns.map(c => {
+      if (c.meta_campaign_id && liveById.has(c.meta_campaign_id)) {
+        const live = liveById.get(c.meta_campaign_id);
+        return {
+          ...c,
+          status: live.status,
+          dailyBudget: live.dailyBudget || c.dailyBudget,
+          source: 'META_LIVE'
+        };
+      }
+      return c;
+    });
+
+    const storedMetaIds = new Set(updatedStored.map(c => c.meta_campaign_id || c.id));
     const combined = [
-      ...storedCampaigns,
-      ...liveCampaigns.filter(lc => !storedIds.has(lc.id))
+      ...updatedStored,
+      ...liveCampaigns.filter(lc => !storedMetaIds.has(lc.id))
     ];
 
     res.json(combined);
