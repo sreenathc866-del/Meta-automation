@@ -158,17 +158,27 @@ router.get('/campaigns', async (req, res) => {
     let liveCampaigns = [];
     try {
       const metaCamps = await metaAdsService.getLiveCampaigns();
-      liveCampaigns = metaCamps.map(mc => ({
-        id: mc.id,
-        meta_campaign_id: mc.id,
-        name: mc.name,
-        destinationType: mc.objective || 'META_CAMPAIGN',
-        dailyBudget: mc.daily_budget ? (parseInt(mc.daily_budget, 10) / 100) : 0,
-        approved: true,
-        published: true,
-        status: mc.status || 'PAUSED',
-        source: 'META_LIVE'
-      }));
+      liveCampaigns = metaCamps.map(mc => {
+        // Look for budget on campaign or its first adset
+        let b = 0;
+        if (mc.daily_budget) {
+          b = parseInt(mc.daily_budget, 10) / 100;
+        } else if (mc.adsets?.data?.length > 0 && mc.adsets.data[0].daily_budget) {
+          b = parseInt(mc.adsets.data[0].daily_budget, 10) / 100;
+        }
+
+        return {
+          id: mc.id,
+          meta_campaign_id: mc.id,
+          name: mc.name,
+          destinationType: mc.objective || 'META_CAMPAIGN',
+          dailyBudget: b,
+          approved: true,
+          published: true,
+          status: mc.status || 'PAUSED',
+          source: 'META_LIVE'
+        };
+      });
     } catch (metaErr) {
       console.warn('[Ads] Note: Could not fetch live campaigns from Meta:', metaErr.message);
     }
@@ -375,21 +385,31 @@ router.post('/campaigns/:id/status', async (req, res) => {
       return res.status(400).json({ error: "Status must be 'ACTIVE' or 'PAUSED'" });
     }
 
-    const campDoc = await db.collection('ad_campaigns').doc(id).get();
-    if (!campDoc.exists) return res.status(404).json({ error: 'Campaign not found' });
-    const c = campDoc.data();
+    let metaCampaignId = id;
 
-    if (c.meta_campaign_id) {
-      await metaAdsService.updateCampaignStatus(c.meta_campaign_id, status);
+    // Check if ID exists in Firestore
+    try {
+      const campDoc = await db.collection('ad_campaigns').doc(id).get();
+      if (campDoc.exists) {
+        const c = campDoc.data();
+        if (c.meta_campaign_id) {
+          metaCampaignId = c.meta_campaign_id;
+        }
+        await db.collection('ad_campaigns').doc(id).update({
+          status: status,
+          updated_at: new Date().toISOString()
+        });
+      }
+    } catch (dbErr) {
+      console.warn('[Ads Status] Firestore lookup skipped or failed:', dbErr.message);
     }
 
-    await db.collection('ad_campaigns').doc(id).update({
-      status: status,
-      updated_at: new Date().toISOString()
-    });
+    // Direct toggle on Meta Graph API
+    await metaAdsService.updateCampaignStatus(metaCampaignId, status);
 
-    res.json({ success: true, status });
+    res.json({ success: true, status, id: metaCampaignId });
   } catch (err) {
+    console.error('[Ads Status Error]:', err.response?.data || err.message);
     res.status(500).json({ error: err.response?.data?.error?.message || err.message });
   }
 });

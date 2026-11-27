@@ -310,7 +310,7 @@ async function getLiveCampaigns(adAccountId) {
   try {
     const res = await axios.get(`${GRAPH_BASE_URL}/${cleanAccountId}/campaigns`, {
       params: {
-        fields: 'id,name,status,objective,daily_budget,lifetime_budget,created_time,start_time',
+        fields: 'id,name,status,objective,daily_budget,lifetime_budget,created_time,start_time,adsets{id,name,daily_budget,status}',
         access_token: token,
         limit: 50
       }
